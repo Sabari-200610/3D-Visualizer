@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>How a Computer Works — 3D Explainer POC</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="canvas-wrap"></div>
+
+<div class="hud" id="title">
+  <h1>Computer — Exploded View</h1>
+  <p>A rough proof-of-concept: hover a part to identify it, click anywhere to explode or reassemble the model.</p>
+</div>
+
+<div class="hud empty" id="info-panel">
+  <p id="part-name">No part selected</p>
+  <p id="part-desc">Hover over the model to see what each piece does.</p>
+</div>
+
+<div class="hud" id="hint">
+  drag to look around<br/>
+  click to <kbd>explode</kbd> / <kbd>reassemble</kbd>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
