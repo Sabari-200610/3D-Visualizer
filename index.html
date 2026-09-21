@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D-Visualizer | Interactive Exploded View Explorer</title>
+  <title>3D-Visualizer | Precision Interactive Assembly & Component Inspector</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -12,1115 +12,585 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    code,
-    pre,
-    .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .canvas-container canvas {
-      outline: none;
-    }
-
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: rgba(56, 189, 248, 0.4);
-      border-radius: 9999px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(56, 189, 248, 0.7);
-    }
-
-    #partsList, #objectSelectorScrollWrap {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(56, 189, 248, 0.4) rgba(15, 23, 42, 0.6);
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col overflow-hidden select-none">
+<body class="flex flex-col antialiased selection:bg-blue-600 selection:text-white">
 
-  <!-- Top App Navigation Bar -->
+  <!-- Classic Header Navigation -->
   <header
-    class="h-16 border-b border-slate-800/80 bg-[#0f172a]/90 backdrop-blur-md px-6 flex items-center justify-between z-30 shrink-0">
-    <div class="flex items-center gap-3">
-      <div
-        class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/25">
-        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        </svg>
-      </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="font-bold text-lg tracking-tight text-white">3D-Visualizer</span>
-          <span
-            class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">v2.4
-            Live Engine</span>
+    class="sticky top-0 z-40 h-16 border-b border-[#242e40] bg-[#10151f]/95 backdrop-blur-md px-4 lg:px-6 flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-4">
+      <!-- Classic CAD Monogram Logo -->
+      <a href="#" class="flex items-center gap-3 group">
+        <div
+          class="w-8 h-8 rounded-lg bg-[#1a2332] border border-[#303e54] flex items-center justify-center text-blue-400 group-hover:border-blue-500 group-hover:text-blue-300 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
         </div>
-        <p class="text-xs text-slate-400">Interactive Object Inspection & AI Exploded Part Analysis</p>
-      </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-sm tracking-tight text-white">3D Visualizer</span>
+            <span
+              class="text-[10px] font-medium tracking-wide px-1.5 py-0.5 rounded bg-[#1e2738] text-slate-300 border border-[#2e3b52]">Engineering
+              Viewer</span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block">Interactive Assembly & Exploded Part Inspection</p>
+        </div>
+      </a>
     </div>
 
-    <!-- Search / Object Selector Bar -->
-    <div class="flex items-center gap-2 max-w-md w-full mx-6">
+    <!-- Center Model Dropdown & Search -->
+    <div class="flex items-center gap-3 max-w-lg w-full mx-4">
+      <!-- Model Dropdown -->
+      <div class="relative w-48 shrink-0 hidden md:block">
+        <label for="modelSelectDropdown" class="sr-only">Select 3D Model</label>
+        <select id="modelSelectDropdown"
+          class="w-full bg-[#161d28] border border-[#2a364a] text-xs rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors cursor-pointer appearance-none">
+          <!-- Populated dynamically via JS -->
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Quick Search Bar -->
       <div class="relative w-full">
-        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor"
-          viewBox="0 0 24 24">
+        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none"
+          stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <input id="objectSearchInput" type="text" placeholder="Search everyday objects (bicycle, laptop, split ac...)"
-          class="w-full bg-slate-900/90 border border-slate-700/70 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 text-sm rounded-lg pl-10 pr-24 py-2 text-slate-200 placeholder-slate-500 outline-none transition-all" />
+        <input id="objectSearchInput" type="text" placeholder="Search model or component..."
+          class="w-full bg-[#161d28] border border-[#2a364a] focus:border-blue-500 text-xs rounded-lg pl-9 pr-14 py-2 text-slate-200 placeholder-slate-500 outline-none transition-all" />
         <span
-          class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">⌘K
-          / Enter</span>
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-[#1f2838] text-slate-400 px-1.5 py-0.5 rounded border border-[#2e3c52]">↵
+          Enter</span>
       </div>
     </div>
 
-    <!-- Top Action Badges & View Switcher -->
-    <div class="flex items-center gap-3">
+    <!-- Header Actions -->
+    <div class="flex items-center gap-2">
+      <a href="#specificationsSection"
+        class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#161d28] hover:bg-[#1e2736] border border-[#2a364a] text-slate-300 hover:text-white transition-colors">
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+        <span>Specifications</span>
+      </a>
+
       <button id="viewCodeModalBtn"
-        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors">
-        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#161d28] hover:bg-[#1e2736] border border-[#2a364a] text-slate-300 hover:text-white transition-colors"
+        title="View objects registry definition">
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
         </svg>
-        <span>View objects.js Source</span>
+        <span class="hidden md:inline">Source</span>
       </button>
-      <div class="h-5 w-px bg-slate-800"></div>
-      <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-xs font-medium text-emerald-300">Claude API: Live</span>
-      </div>
     </div>
   </header>
 
-  <!-- Main Work Area -->
-  <div class="flex-1 flex overflow-hidden relative">
+  <!-- Main 3D Interactive Workstation (Full viewport height on desktop, scrollable page below) -->
+  <section
+    class="w-full h-[calc(100vh-4rem)] min-h-[640px] max-h-[960px] flex flex-col lg:flex-row border-b border-[#242e40] relative shrink-0">
 
-    <!-- Left Sidebar: Object Selector & Parts Breakdown -->
-    <aside class="w-80 h-full min-h-0 border-r border-slate-800/80 bg-[#0d1322]/95 backdrop-blur-md flex flex-col z-20 shrink-0">
+    <!-- Left Explorer Sidebar: Clean, Unified, Fully Scrollable -->
+    <aside class="w-full lg:w-80 xl:w-96 h-full border-r border-[#242e40] bg-[#10151f] flex flex-col z-20 shrink-0">
 
-      <!-- Object Library: built dynamically from every entry in OBJECTS (scrollable & compact) -->
-      <div class="p-3.5 border-b border-slate-800/70 shrink-0">
+      <!-- Sidebar Top: Active Object Info & Model Picker -->
+      <div class="p-3.5 border-b border-[#242e40] bg-[#121824] shrink-0">
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
-            Object Library
+            <span>Model Library</span>
           </h2>
           <span id="libraryCountBadge"
-            class="text-[10px] text-sky-400 font-mono bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/50">0 items</span>
+            class="text-[10px] font-mono bg-[#1a2230] text-slate-300 px-2 py-0.5 rounded border border-[#2b394e]">11
+            models</span>
         </div>
-        <div class="max-h-36 overflow-y-auto pr-1" id="objectSelectorScrollWrap">
-          <div class="grid grid-cols-2 gap-1.5" id="objectSelectorGrid">
-            <!-- Dynamically populated buttons -->
-          </div>
+
+        <!-- Category Filter Tabs -->
+        <div id="categoryTabsRow" class="flex items-center gap-1 overflow-x-auto pb-1.5 mb-2.5 scrollbar-none"
+          style="scrollbar-width: none;">
+          <!-- Dynamically populated category tabs -->
+        </div>
+
+        <!-- Quick Model Buttons (Compact, non-trapping) -->
+        <div id="objectSelectorGrid" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
+          <!-- Populated dynamically via JS -->
         </div>
       </div>
 
-      <!-- Parts Inspector Header -->
-      <div class="px-3.5 py-2.5 bg-slate-900/50 border-b border-slate-800/60 flex items-center justify-between shrink-0">
+      <!-- Parts Hierarchy Header -->
+      <div class="px-3.5 py-2.5 bg-[#0e131c] border-b border-[#242e40] flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2">
-          <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          <span class="text-xs font-semibold text-slate-200 uppercase tracking-wider">Components & Parts</span>
+          <span class="text-xs font-semibold text-slate-200">Components & Assembly</span>
         </div>
         <span id="partCountBadge"
-          class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">0 parts</span>
+          class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1a2230] text-slate-400 border border-[#2b394e]">0
+          parts</span>
       </div>
 
-      <!-- Parts List (Scrollable with explicit flex shrinkage) -->
-      <div id="partsList" class="flex-1 min-h-0 overflow-y-auto p-3 space-y-1.5 overscroll-contain">
-        <!-- Rendered parts items -->
-      </div>
-
-      <!-- Sidebar Active Part Quick Summary (Always visible right here) -->
-      <div id="sidebarPartSummary" class="p-3 bg-slate-900/90 border-t border-slate-800/80 shrink-0">
-        <div class="flex items-center justify-between mb-1">
-          <div class="flex items-center gap-2 truncate">
-            <span id="sidebarPartDot" class="w-2.5 h-2.5 rounded-full shrink-0 bg-sky-400"></span>
-            <span id="sidebarPartName" class="text-xs font-bold text-white truncate">Case</span>
-          </div>
-          <span id="sidebarPartGeom" class="text-[9px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded shrink-0">box</span>
+      <!-- Parts List (Full unconstrained scroll area) -->
+      <div id="sidebarScrollArea" class="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-1.5 overscroll-contain">
+        <div id="partsList" class="space-y-1.5">
+          <!-- Rendered parts items -->
         </div>
-        <p id="sidebarPartDesc" class="text-[11px] text-slate-300 leading-relaxed line-clamp-3">
-          Hover or click any component to view its full breakdown.
-        </p>
       </div>
 
-      <!-- Quick Explode Control Bar -->
-      <div class="p-3.5 border-t border-slate-800/80 bg-[#0b0f19] space-y-2.5 shrink-0">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      <!-- Active Part Full Description Card in Sidebar (No line-clamp, smooth scroll if long) -->
+      <div id="sidebarPartSummary" class="p-3 bg-[#131924] border-t border-[#242e40] shrink-0">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2 min-w-0">
+            <span id="sidebarPartDot" class="w-2.5 h-2.5 rounded-full shrink-0 bg-blue-500"></span>
+            <span id="sidebarPartName" class="text-xs font-semibold text-white truncate">Component Description</span>
+          </div>
+          <span id="sidebarPartCategory"
+            class="text-[9px] uppercase tracking-wider font-semibold text-slate-400 bg-[#1c2433] px-1.5 py-0.5 rounded border border-[#2d3a4e] shrink-0">Subsystem</span>
+        </div>
+        <div class="max-h-24 overflow-y-auto pr-1">
+          <p id="sidebarPartDesc" class="text-xs text-slate-300 leading-relaxed">
+            Select or hover any component from the list or the 3D model to inspect its specifications.
+          </p>
+        </div>
+      </div>
+
+      <!-- Exploded View Controls (Clean CAD Style) -->
+      <div class="p-3.5 border-t border-[#242e40] bg-[#0d121b] space-y-2.5 shrink-0">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-medium text-slate-300 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
             </svg>
             Explode Distance
           </span>
-          <span id="explodeFactorLabel" class="text-xs font-mono font-bold text-sky-400">0%</span>
+          <span id="explodeFactorLabel" class="font-mono font-semibold text-blue-400">0% (Assembled)</span>
         </div>
+
         <input id="explodeSlider" type="range" min="0" max="1" step="0.01" value="0"
-          class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400" />
+          class="w-full h-1.5 bg-[#1f2838] rounded-lg appearance-none cursor-pointer accent-blue-500" />
+
         <div class="grid grid-cols-2 gap-2">
           <button id="toggleExplodeBtn"
-            class="px-3 py-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-xs font-semibold text-sky-300 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
-            <span id="toggleExplodeIcon">💥</span>
+            class="px-3 py-2 rounded-lg bg-[#192334] hover:bg-[#202d42] border border-[#2e3d54] text-xs font-semibold text-slate-200 hover:text-white transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
             <span id="toggleExplodeText">Explode View</span>
           </button>
           <button id="resetViewBtn"
-            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 transition-all flex items-center justify-center gap-1 active:scale-95">
+            class="px-3 py-2 rounded-lg bg-[#141b26] hover:bg-[#1c2535] border border-[#273447] text-xs font-medium text-slate-300 hover:text-white transition-all flex items-center justify-center gap-1.5 active:scale-95">
             <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Reset View
+            <span>Reset View</span>
           </button>
         </div>
+
+        <!-- Take Quiz Button -->
+        <button id="startQuizBtn"
+          class="w-full px-3 py-2 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-xs font-semibold text-sky-300 hover:text-sky-200 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95">
+          <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          <span id="startQuizBtnText">Take Quiz</span>
+        </button>
       </div>
     </aside>
 
-    <!-- Center 3D Stage & Visualizer -->
-    <main class="flex-1 relative flex flex-col bg-gradient-to-b from-[#090d16] to-[#04060a]">
+    <!-- Center 3D CAD Canvas Stage -->
+    <main class="flex-1 relative flex flex-col cad-canvas-backdrop overflow-hidden">
 
       <!-- 3D Canvas Mount Point -->
       <div id="canvasMount" class="w-full h-full relative cursor-grab active:cursor-grabbing"></div>
 
-      <!-- Floating HUD Overlay: Interaction Instructions (Top-Left) -->
+      <!-- Leader Line SVG Overlay & Floating Part Labels Container -->
+      <div id="labelsContainer"
+        class="absolute inset-0 pointer-events-none z-10 overflow-hidden transition-opacity duration-300"
+        style="opacity: 0;">
+        <svg id="leaderLinesSvg" class="absolute inset-0 w-full h-full pointer-events-none overflow-visible"></svg>
+        <div id="labelsDivWrap" class="absolute inset-0 pointer-events-none"></div>
+      </div>
+
+      <!-- Top-Left Subtle Watermark / Object Info -->
       <div class="absolute top-4 left-4 pointer-events-none z-10 flex flex-col gap-2">
         <div
-          class="bg-slate-900/85 backdrop-blur-md border border-slate-800/80 rounded-xl p-3 shadow-xl max-w-sm pointer-events-auto">
-          <div class="flex items-center justify-between mb-1">
-            <h1 id="currentObjectHeading" class="text-base font-bold text-white flex items-center gap-2">
-              <span>Computer</span>
-            </h1>
-            <span id="currentObjectMeta"
-              class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">R: 18 | D: 6</span>
+          class="bg-[#101520]/80 backdrop-blur-md border border-[#263144] rounded-xl px-3.5 py-2.5 shadow-lg max-w-xs">
+          <div class="flex items-center gap-2 mb-0.5">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <h1 id="currentObjectHeading" class="text-sm font-semibold text-white">Model Name</h1>
           </div>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Drag to rotate • Scroll to zoom • Click/hover parts to inspect. Click canvas space to explode/reassemble.
+          <p id="currentObjectSubhead" class="text-[11px] text-slate-400">
+            Left-click drag to orbit • Right-click to pan • Scroll to zoom
           </p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <div
-            class="inline-flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 rounded-lg px-2.5 py-1 text-[11px] text-slate-300 backdrop-blur-sm">
-            <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            <span>Primitives: Box, Sphere, Cylinder</span>
-          </div>
-          <button id="toggleWireframeBtn"
-            class="pointer-events-auto px-2.5 py-1 text-[11px] rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors">
-            Toggle Wireframe
-          </button>
         </div>
       </div>
 
-      <!-- Prominent Component Explanation Card (Top-Right Eye-Level: Never Down or Clipped) -->
+      <!-- Right Component Inspector Panel (Classic Engineering Details) -->
       <div id="explanationCard"
-        class="absolute top-4 right-4 w-96 max-w-[calc(100vw-23rem)] bg-[#0f172a]/95 backdrop-blur-xl border border-sky-500/40 rounded-2xl p-4 shadow-2xl z-20 transition-all duration-300 max-h-[calc(100vh-6rem)] overflow-y-auto">
-        <div class="flex items-start justify-between gap-3 mb-2">
+        class="absolute top-4 right-4 w-80 sm:w-96 max-w-[calc(100vw-22rem)] bg-[#111622]/95 backdrop-blur-md border border-[#28354a] rounded-xl p-4 shadow-xl z-20 transition-all duration-200 max-h-[calc(100%-2rem)] flex flex-col">
+
+        <!-- Inspector Header -->
+        <div class="flex items-start justify-between gap-2 pb-2.5 border-b border-[#232f42] shrink-0">
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2 mb-1">
-              <span id="aiStatusDot" class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-sm shadow-sky-400 animate-pulse"></span>
-              <span id="aiStatusBadge" class="text-[10px] font-bold uppercase tracking-wider text-sky-400 font-mono">
-                Component Breakdown
+              <span id="inspectorDot" class="w-2 h-2 rounded-full bg-blue-400"></span>
+              <span id="inspectorCategory" class="text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                Component Specification
               </span>
             </div>
-            <h3 id="activePartName" class="text-base font-bold text-white truncate">Diamond Frame</h3>
-            <span id="activePartId" class="text-[11px] font-mono text-slate-400">part_id: "frame"</span>
+            <h3 id="activePartName" class="text-base font-semibold text-white truncate">Component Name</h3>
           </div>
-          <span id="partColorIndicator" class="w-6 h-6 rounded-lg border border-white/20 shadow-inner shrink-0 mt-1"
-            style="background-color: #38bdf8;"></span>
+          <!-- Part Color Preview & Finish Indicator -->
+          <div class="flex flex-col items-end shrink-0">
+            <span id="partColorIndicator" class="w-5 h-5 rounded-md border border-[#3b4961] shadow-inner"
+              style="background-color: #3b82f6;"></span>
+            <span id="finishBadge" class="text-[9px] text-slate-400 mt-1 font-mono">Standard</span>
+          </div>
         </div>
 
-        <div class="my-2.5 p-3 rounded-xl bg-slate-900/90 border border-slate-800/90">
-          <p id="explanationText" class="text-xs text-slate-200 leading-relaxed">
-            The core structural backbone connecting components, distributing load evenly and ensuring optimal operation.
-          </p>
+        <!-- Scrollable Inspector Body (Fixes description cutoff) -->
+        <div id="inspectorScrollArea" class="flex-1 overflow-y-auto py-3 space-y-3 pr-1">
+          <!-- Full Technical Description -->
+          <div>
+            <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Functional
+              Description</span>
+            <p id="explanationText"
+              class="text-xs text-slate-200 leading-relaxed bg-[#161c29] p-3 rounded-lg border border-[#232e40]">
+              Component technical explanation will appear here.
+            </p>
+          </div>
+
+          <!-- Physical Parameters -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-2 rounded-lg bg-[#141924] border border-[#212c3e]">
+              <span class="text-[10px] text-slate-400 block mb-0.5">Physical Dimensions</span>
+              <span id="dimensionsBadge" class="font-mono text-slate-200 text-[11px] block truncate">Dimensions</span>
+            </div>
+            <div class="p-2 rounded-lg bg-[#141924] border border-[#212c3e]">
+              <span class="text-[10px] text-slate-400 block mb-0.5">Assembly Status</span>
+              <span id="statusIndicator" class="text-emerald-400 font-medium text-[11px] flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Active Part
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div class="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1.5 border-t border-slate-800/60">
-          <span id="geometryBadge" class="truncate pr-2">cylinder [r:0.15, h:6]</span>
-          <span id="statusIndicator" class="text-emerald-400 flex items-center gap-1 shrink-0">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <!-- Inspector Actions -->
+        <div class="pt-2.5 border-t border-[#232f42] flex items-center justify-between shrink-0">
+          <button id="focusPartBtn"
+            class="px-2.5 py-1.5 rounded-lg bg-[#1b2332] hover:bg-[#222c3e] border border-[#2d3c52] text-xs font-medium text-slate-200 hover:text-white transition-colors flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            Ready
-          </span>
-        </div>
-      </div>
-
-      <!-- Bottom Hint Bar -->
-      <div class="absolute bottom-4 left-4 pointer-events-none z-10">
-        <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800/70 rounded-lg px-3 py-1.5 text-[11px] text-slate-400 flex items-center gap-2">
-          <span>Click canvas space or double-click to <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200 font-mono font-bold">Explode</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200 font-mono font-bold">Reassemble</kbd></span>
-        </div>
-      </div>
-
-      <!-- 3D Canvas Loading Indicator -->
-      <div id="canvasLoader"
-        class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-10 hidden">
-        <div class="flex flex-col items-center gap-3">
-          <div class="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-          <span class="text-xs text-slate-400 font-medium">Synthesizing 3D Geometry...</span>
-        </div>
-      </div>
-    </main>
-
-  </div>
-
-  <!-- Source Code Modal -->
-  <div id="codeModal"
-    class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-6 hidden">
-    <div
-      class="bg-[#0f172a] border border-slate-700/80 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-        <div class="flex items-center gap-2.5">
-          <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <h3 class="font-bold text-white text-sm">objects.js Registry Definition</h3>
-        </div>
-        <div class="flex items-center gap-3">
-          <button id="copyCodeBtn"
-            class="px-3 py-1 text-xs rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 transition-colors">
-            Copy JS
+            <span>Focus Camera</span>
           </button>
-          <button id="closeCodeModalBtn"
-            class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+          <button id="closeInspectorBtn" class="text-slate-400 hover:text-slate-200 p-1 text-xs"
+            title="Minimize Inspector">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
       </div>
-      <div class="p-6 overflow-y-auto flex-1 font-mono text-xs text-slate-300 bg-[#090d16]">
+
+      <!-- Reopen Inspector Button if closed -->
+      <button id="reopenInspectorBtn"
+        class="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-lg bg-[#111622]/90 border border-[#28354a] text-xs font-medium text-slate-300 hover:text-white shadow-lg hidden">
+        Show Inspector
+      </button>
+
+      <!-- Floating Bottom CAD Toolbar -->
+      <div
+        class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 bg-[#101520]/90 backdrop-blur-md border border-[#263346] px-2.5 py-1.5 rounded-xl shadow-xl">
+        <button id="toggleWireframeBtn"
+          class="px-2.5 py-1 text-xs rounded-lg bg-[#171f2c] hover:bg-[#202b3d] border border-[#29364a] text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
+          title="Toggle Wireframe (W)">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M12 4v16" />
+          </svg>
+          <span>Wireframe</span>
+        </button>
+
+        <button id="toggleAutoRotateBtn"
+          class="px-2.5 py-1 text-xs rounded-lg bg-[#171f2c] hover:bg-[#202b3d] border border-[#29364a] text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
+          title="Toggle Auto-Rotate (Space)">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span id="autoRotateText">Auto-Rotate</span>
+        </button>
+
+        <div class="h-4 w-px bg-[#263346] mx-1"></div>
+
+        <a href="#specificationsSection"
+          class="px-2.5 py-1 text-xs rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 hover:text-white transition-colors flex items-center gap-1">
+          <span>Scroll to Specs</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </a>
+      </div>
+
+      <!-- 3D Canvas Loading Indicator -->
+      <div id="canvasLoader"
+        class="absolute inset-0 bg-[#0b0e14]/80 backdrop-blur-sm flex items-center justify-center z-30 hidden">
+        <div
+          class="flex flex-col items-center gap-2.5 bg-[#141b26] border border-[#2b394e] px-6 py-4 rounded-xl shadow-2xl">
+          <div class="w-7 h-7 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          <span class="text-xs text-slate-300 font-medium">Loading 3D Assembly...</span>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- Scrollable Lower Documentation Section (Allows natural vertical scrolling!) -->
+  <div class="w-full bg-[#0b0e14] py-12 px-4 lg:px-8 max-w-7xl mx-auto space-y-12">
+
+    <!-- Section 1: Bill of Materials & Technical Specifications Table -->
+    <section id="specificationsSection" class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#242e40] pb-4">
+        <div>
+          <h2 class="text-lg font-semibold text-white tracking-tight flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            <span>Component Specifications & Bill of Materials</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Full physical parameters, structural role, and material finishes for <span id="tableModelName"
+              class="font-medium text-slate-200">Current Model</span>.
+          </p>
+        </div>
+        <span id="tableItemCount"
+          class="text-xs font-mono bg-[#141a24] text-slate-300 px-3 py-1 rounded-lg border border-[#253244] self-start sm:self-auto">
+          0 Components Listed
+        </span>
+      </div>
+
+      <!-- Classic Table Container -->
+      <div class="overflow-x-auto rounded-xl border border-[#242e40] bg-[#10151f]">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-[#141b26] text-slate-400 uppercase tracking-wider font-semibold border-b border-[#242e40]">
+            <tr>
+              <th scope="col" class="py-3 px-4 w-12 text-center">#</th>
+              <th scope="col" class="py-3 px-4">Component Name</th>
+              <th scope="col" class="py-3 px-4">Subsystem</th>
+              <th scope="col" class="py-3 px-4">Dimensions</th>
+              <th scope="col" class="py-3 px-4">Finish / Material</th>
+              <th scope="col" class="py-3 px-4 min-w-[280px]">Functional Summary</th>
+              <th scope="col" class="py-3 px-4 text-right">Inspect</th>
+            </tr>
+          </thead>
+          <tbody id="specificationsTableBody" class="divide-y divide-[#1e2736]">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 2: Assembly Architecture & Engineering Breakdown -->
+    <section class="space-y-4">
+      <div class="border-b border-[#242e40] pb-4">
+        <h2 class="text-lg font-semibold text-white tracking-tight flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+          <span>Assembly Architecture & Engineering Principles</span>
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">
+          Key structural considerations, modular tolerances, and mechanical interconnects.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-4 rounded-xl bg-[#10151f] border border-[#242e40] space-y-2">
+          <div class="flex items-center gap-2 text-slate-200 font-semibold text-sm">
+            <span
+              class="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-mono text-xs">01</span>
+            <h3>Structural Chassis</h3>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            The foundation provides rigid dimensional stability, absorbs kinetic energy, and anchors electronic
+            sub-assemblies against physical strain and environmental deflection.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#10151f] border border-[#242e40] space-y-2">
+          <div class="flex items-center gap-2 text-slate-200 font-semibold text-sm">
+            <span
+              class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-mono text-xs">02</span>
+            <h3>Kinematics & Thermal Flow</h3>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Internal component positioning balances mass distribution, accommodates thermal expansion, and ensures
+            uninterrupted convection dissipation away from critical silicon dies.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#10151f] border border-[#242e40] space-y-2">
+          <div class="flex items-center gap-2 text-slate-200 font-semibold text-sm">
+            <span
+              class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-mono text-xs">03</span>
+            <h3>Modular Serviceability</h3>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Standardized fastener alignments, accessible cable harnesses, and defined sub-module boundaries simplify
+            non-destructive disassembly, repair, and end-of-life recycling.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Navigation & Shortcuts Reference -->
+    <section
+      class="p-6 rounded-xl bg-[#10151f] border border-[#242e40] flex flex-col md:flex-row items-center justify-between gap-6">
+      <div>
+        <h3 class="text-sm font-semibold text-white">Keyboard & Mouse Navigation Guide</h3>
+        <p class="text-xs text-slate-400 mt-1">Master precise CAD inspection using viewport controls and shortcuts.</p>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs w-full md:w-auto">
+        <div class="flex items-center gap-2 bg-[#141b26] px-3 py-2 rounded-lg border border-[#212c3e]">
+          <kbd
+            class="px-1.5 py-0.5 rounded bg-[#1e2738] border border-[#303e54] font-mono text-[10px] text-slate-300">Orbit</kbd>
+          <span class="text-slate-400 text-[11px]">Left Click Drag</span>
+        </div>
+        <div class="flex items-center gap-2 bg-[#141b26] px-3 py-2 rounded-lg border border-[#212c3e]">
+          <kbd
+            class="px-1.5 py-0.5 rounded bg-[#1e2738] border border-[#303e54] font-mono text-[10px] text-slate-300">Pan</kbd>
+          <span class="text-slate-400 text-[11px]">Right Click / Shift</span>
+        </div>
+        <div class="flex items-center gap-2 bg-[#141b26] px-3 py-2 rounded-lg border border-[#212c3e]">
+          <kbd
+            class="px-1.5 py-0.5 rounded bg-[#1e2738] border border-[#303e54] font-mono text-[10px] text-slate-300">Zoom</kbd>
+          <span class="text-slate-400 text-[11px]">Mouse Wheel</span>
+        </div>
+        <div class="flex items-center gap-2 bg-[#141b26] px-3 py-2 rounded-lg border border-[#212c3e]">
+          <kbd
+            class="px-1.5 py-0.5 rounded bg-[#1e2738] border border-[#303e54] font-mono text-[10px] text-slate-300">E</kbd>
+          <span class="text-slate-400 text-[11px]">Explode Toggle</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Classic Footer -->
+    <footer
+      class="pt-6 pb-12 border-t border-[#1e2736] flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-medium text-slate-400">3D-Visualizer</span>
+        <span>•</span>
+        <span>Precision Object Inspection Engine</span>
+      </div>
+      <div>
+        <span>WebGL Three.js Core • Render Resolution: Native Retinal</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Source Code Modal -->
+  <div id="codeModal"
+    class="fixed inset-0 bg-[#090d14]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 hidden">
+    <div
+      class="bg-[#10151f] border border-[#29364b] rounded-xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-[#242e40] flex items-center justify-between bg-[#131924]">
+        <div class="flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h3 class="font-semibold text-white text-xs">objects.js Registry Definition</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="copyCodeBtn"
+            class="px-2.5 py-1 text-xs rounded-lg bg-[#1a2332] hover:bg-[#232f42] text-slate-200 border border-[#2f3f58] transition-colors">
+            Copy JS
+          </button>
+          <button id="closeCodeModalBtn"
+            class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#1e2736] transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="codeModalContentWrap" class="p-4 overflow-y-auto flex-1 font-mono text-xs text-slate-300 bg-[#0c1017]">
         <pre><code id="codeModalContent"></code></pre>
       </div>
     </div>
   </div>
 
-  <!-- Embedded Script handling 3D Visualizer & objects.js -->
-  <script>
-    // -------------------------------------------------------------
-    // OBJECTS REGISTRY: now loaded from objects.js (see <script> tag
-    // in <head>). The block that used to be hardcoded here has been
-    // removed — OBJECTS is a global provided by that file.
-    // -------------------------------------------------------------
-    /* REMOVED_OBJECTS_BLOCK_START
-    const UNUSED_MOCK_OBJECTS = {
-      'bicycle': {
-        label: 'Bicycle',
-        viewRadius: 18,
-        explodeDistance: 6,
-        parts: [
-          {
-            id: 'frame',
-            name: 'Diamond Frame',
-            color: 0x38bdf8,
-            geometry: { type: 'cylinder', args: [0.15, 0.15, 6, 16] },
-            position: [0, 2.5, 0],
-            rotation: [0, 0, Math.PI / 4],
-            explanation: 'The core structural backbone of the bicycle connecting the front fork, pedals, and rear wheel hub. It distributes rider weight evenly and absorbs road vibrations.'
-          },
-          {
-            id: 'front-wheel',
-            name: 'Front Wheel',
-            color: 0x2b323f,
-            geometry: { type: 'cylinder', args: [2.2, 2.2, 0.35, 32] },
-            position: [4, 2.2, 0],
-            rotation: [Math.PI / 2, 0, 0],
-            explanation: 'Provides steering directional control and forward rolling motion, fitted with rubber pneumatic tire and spoke tension system.'
-          },
-          {
-            id: 'back-wheel',
-            name: 'Rear Wheel',
-            color: 0x2b323f,
-            geometry: { type: 'cylinder', args: [2.2, 2.2, 0.35, 32] },
-            position: [-4, 2.2, 0],
-            rotation: [Math.PI / 2, 0, 0],
-            explanation: 'The driven wheel attached to the rear cassette, transforming chain rotation from pedal power into forward propulsion.'
-          },
-          {
-            id: 'handlebar',
-            name: 'Handlebar & Stem',
-            color: 0x94a3b8,
-            geometry: { type: 'cylinder', args: [0.15, 0.15, 3.5, 16] },
-            position: [3.2, 4.8, 0],
-            rotation: [0, 0, Math.PI / 2],
-            explanation: 'Steering interface gripped by the cyclist, housing the brake levers and gear shifters for navigation.'
-          },
-          {
-            id: 'seat',
-            name: 'Bicycle Saddle',
-            color: 0x1e293b,
-            geometry: { type: 'box', args: [1.8, 0.4, 1.0] },
-            position: [-1.6, 4.3, 0],
-            rotation: [0, 0, 0.1],
-            explanation: 'Ergonomic seat supporting the cyclist posture and pedaling leverage mounted atop the adjustable seatpost.'
-          },
-          {
-            id: 'pedals',
-            name: 'Pedals & Crankset',
-            color: 0xf5a623,
-            geometry: { type: 'cylinder', args: [0.5, 0.5, 1.4, 16] },
-            position: [-0.5, 1.3, 0],
-            rotation: [Math.PI / 2, 0, 0],
-            explanation: 'Mechanical levers rotated by rider foot effort, driving the front chainring gear.'
-          },
-          {
-            id: 'chain',
-            name: 'Drive Chain & Sprocket',
-            color: 0x64748b,
-            geometry: { type: 'box', args: [3.8, 0.2, 0.15] },
-            position: [-2.2, 1.3, 0.3],
-            explanation: 'Interlinked metal roller chain transferring torque from the front pedal crank to the rear wheel cassette.'
-          }
-        ]
-      },
-
-      'laptop': {
-        label: 'Laptop',
-        viewRadius: 12,
-        explodeDistance: 4,
-        parts: [
-          {
-            id: 'screen',
-            name: 'Display Screen (Lid)',
-            color: 0x38bdf8,
-            geometry: { type: 'box', args: [5.0, 3.4, 0.2] },
-            position: [0, 2.2, -1.6],
-            rotation: [-0.35, 0, 0],
-            explanation: 'High-definition LED/OLED visual display panel housed inside an aluminum protective lid enclosure.'
-          },
-          {
-            id: 'hinge',
-            name: 'Display Hinge',
-            color: 0x94a3b8,
-            geometry: { type: 'cylinder', args: [0.12, 0.12, 4.4, 16] },
-            position: [0, 0.6, -1.6],
-            rotation: [0, 0, Math.PI / 2],
-            explanation: 'Friction torque hinge allowing smooth opening and closing while routing video data cables between base and screen.'
-          },
-          {
-            id: 'keyboard',
-            name: 'Keyboard Deck',
-            color: 0x2b323f,
-            geometry: { type: 'box', args: [4.6, 0.1, 2.0] },
-            position: [0, 0.55, -0.4],
-            explanation: 'Scissor-switch or mechanical input matrix allowing alphanumeric typing and system shortcut interaction.'
-          },
-          {
-            id: 'trackpad',
-            name: 'Multi-touch Trackpad',
-            color: 0x64748b,
-            geometry: { type: 'box', args: [1.6, 0.08, 1.1] },
-            position: [0, 0.52, 1.1],
-            explanation: 'Glass capacitive touch surface registering multi-finger gestures, pointer clicks, and haptic feedback.'
-          },
-          {
-            id: 'motherboard',
-            name: 'Motherboard & Processor',
-            color: 0x1f6f4a,
-            geometry: { type: 'box', args: [3.6, 0.1, 1.8] },
-            position: [0, 0.25, -0.4],
-            explanation: 'The primary printed circuit board holding CPU, GPU, RAM chips, SSD storage, and thermal cooling heatpipes.'
-          },
-          {
-            id: 'battery',
-            name: 'Lithium Battery Cells',
-            color: 0xf5a623,
-            geometry: { type: 'box', args: [4.2, 0.15, 1.2] },
-            position: [0, 0.22, 1.0],
-            explanation: 'Rechargeable multi-cell lithium polymer chemical battery powering the laptop during untethered operation.'
-          }
-        ]
-      },
-
-      'washing-machine': {
-        label: 'Washing Machine',
-        viewRadius: 14,
-        explodeDistance: 5,
-        parts: [
-          {
-            id: 'drum',
-            name: 'Stainless Steel Drum',
-            color: 0x94a3b8,
-            geometry: { type: 'cylinder', args: [1.8, 1.8, 2.8, 32] },
-            position: [0, 0.2, 0],
-            rotation: [Math.PI / 2, 0, 0],
-            explanation: 'Perforated spin basket holding clothes, rotating at high RPM to agitate water and centrifuge liquid out during spin cycles.'
-          },
-          {
-            id: 'door',
-            name: 'Front Glass Porthole Door',
-            color: 0x38bdf8,
-            geometry: { type: 'cylinder', args: [1.4, 1.4, 0.3, 32] },
-            position: [0, 0.2, 2.1],
-            rotation: [Math.PI / 2, 0, 0],
-            transparent: true,
-            opacity: 0.8,
-            explanation: 'Watertight sealed tempered glass door with electromagnetic safety lock allowing visibility into the wash cycle.'
-          },
-          {
-            id: 'control-panel',
-            name: 'Digital Control Panel & Dial',
-            color: 0x2b323f,
-            geometry: { type: 'box', args: [4.2, 1.0, 0.4] },
-            position: [0, 2.3, 1.9],
-            explanation: 'User interface featuring rotary program selectors, LED timing readouts, temperature, and spin speed settings.'
-          },
-          {
-            id: 'motor',
-            name: 'Direct Drive Inverter Motor',
-            color: 0xf5a623,
-            geometry: { type: 'cylinder', args: [1.1, 1.1, 1.2, 24] },
-            position: [0, 0.2, -1.8],
-            rotation: [Math.PI / 2, 0, 0],
-            explanation: 'Brushless DC electric motor attached straight to the rear drum shaft without belts, delivering quiet high-torque rotation.'
-          },
-          {
-            id: 'water-pump',
-            name: 'Drainage Water Pump & Filter',
-            color: 0x1f6f4a,
-            geometry: { type: 'box', args: [1.2, 1.0, 1.2] },
-            position: [1.2, -2.1, 1.2],
-            explanation: 'Centrifugal pump that expels soapy waste water out through the rear discharge hose and traps lint debris.'
-          }
-        ]
-      },
-
-      'air-conditioner': {
-        label: 'Split Air Conditioner',
-        viewRadius: 16,
-        explodeDistance: 5.5,
-        parts: [
-          {
-            id: 'indoor-unit',
-            name: 'Indoor Blower Unit',
-            color: 0xf8fafc,
-            geometry: { type: 'box', args: [5.2, 1.8, 1.4] },
-            position: [0, 3.2, 0],
-            explanation: 'Wall-mounted interior console containing air filters, motorized louvers, and the whisper-quiet cross-flow fan.'
-          },
-          {
-            id: 'cooling-coil',
-            name: 'Evaporator Cooling Coil',
-            color: 0x38bdf8,
-            geometry: { type: 'box', args: [4.6, 1.2, 0.8] },
-            position: [0, 3.2, -0.1],
-            explanation: 'Finned copper tubing where liquid refrigerant expands, absorbing heat from indoor room air and condensing humidity.'
-          },
-          {
-            id: 'outdoor-unit',
-            name: 'Outdoor Condenser Casing',
-            color: 0x94a3b8,
-            geometry: { type: 'box', args: [4.4, 3.2, 2.0] },
-            position: [0, -2.2, 0],
-            explanation: 'Weatherproof metal exterior housing containing the refrigerant compressor, expansion valve, and electrical inverter.'
-          },
-          {
-            id: 'fan',
-            name: 'Condenser Cooling Fan',
-            color: 0x2b323f,
-            geometry: { type: 'cylinder', args: [1.2, 1.2, 0.3, 24] },
-            position: [0.8, -2.2, 1.1],
-            rotation: [Math.PI / 2, 0, 0],
-            explanation: 'Heavy-duty axial propeller fan expelling rejected thermal heat outdoors across the condenser fins.'
-          }
-        ]
-      }
-    };
-    REMOVED_OBJECTS_BLOCK_END */
-
-    // -------------------------------------------------------------
-    // THREE.JS RENDERER & INTERACTION ENGINE
-    // -------------------------------------------------------------
-    let scene, camera, renderer, controls;
-    let currentObjectId = 'computer';
-    let activeMeshes = [];
-    let hoveredMesh = null;
-    let selectedMesh = null;
-    let isWireframe = false;
-
-    // Explode & Reassemble Engine (Lerp-based easing as previous)
-    let isExploded = false;
-    let currentExplodeFactor = 0;
-    let targetExplodeFactor = 0;
-    let isUserDraggingSlider = false;
-
-    // ---- API integration with graceful local fallback ----
-    const API_URL = window.location.protocol.startsWith('http') ? '/api/explain' : 'http://localhost:3001/api/explain';
-    const descriptionCache = {}; // keyed by "objectId:partId"
-
-    async function getDescription(objectId, partId, objectLabel, partName) {
-      const cacheKey = `${objectId}:${partId}`;
-      if (descriptionCache[cacheKey]) return descriptionCache[cacheKey];
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2500);
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ objectLabel, partName, partId }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        if (!res.ok) throw new Error('Server returned an error');
-        const data = await res.json();
-        descriptionCache[cacheKey] = data;
-        return data;
-      } catch (err) {
-        // Return null so the local bundled description is preserved seamlessly
-        return null;
-      }
-    }
-
-    const mount = document.getElementById('canvasMount');
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    let pointerDownPos = { x: 0, y: 0, time: 0 };
-
-    function initThree() {
-      // Scene
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x090d16);
-
-      // Subtle Grid & Floor reflection
-      const grid = new THREE.GridHelper(30, 30, 0x1e293b, 0x0f172a);
-      grid.position.y = -4;
-      scene.add(grid);
-
-      // Camera
-      camera = new THREE.PerspectiveCamera(45, mount.clientWidth / mount.clientHeight, 0.1, 1000);
-
-      // Renderer
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(mount.clientWidth, mount.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
-      mount.appendChild(renderer.domElement);
-
-      // Orbit Controls
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-      controls.maxDistance = 60;
-      controls.minDistance = 3;
-
-      // Lighting Setup
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
-      scene.add(ambientLight);
-
-      const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.85);
-      dirLight1.position.set(10, 20, 15);
-      scene.add(dirLight1);
-
-      const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.45);
-      dirLight2.position.set(-15, -5, -10);
-      scene.add(dirLight2);
-
-      // Listeners
-      window.addEventListener('resize', onWindowResize);
-      mount.addEventListener('mousemove', onMouseMove);
-      mount.addEventListener('pointerdown', (e) => {
-        pointerDownPos.x = e.clientX;
-        pointerDownPos.y = e.clientY;
-        pointerDownPos.time = Date.now();
-      });
-      mount.addEventListener('click', onCanvasClick);
-      mount.addEventListener('dblclick', () => {
-        toggleExplode();
-      });
-
-      // Load initial object
-      loadObject(currentObjectId);
-      animate();
-    }
-
-    function createGeometry(geomDef) {
-      if (geomDef.type === 'box') {
-        return new THREE.BoxGeometry(...geomDef.args);
-      } else if (geomDef.type === 'sphere') {
-        return new THREE.SphereGeometry(...geomDef.args);
-      } else if (geomDef.type === 'cylinder') {
-        return new THREE.CylinderGeometry(...geomDef.args);
-      }
-      return new THREE.BoxGeometry(1, 1, 1);
-    }
-
-    function loadObject(objId) {
-      const objData = OBJECTS[objId];
-      if (!objData) return;
-
-      currentObjectId = objId;
-
-      // Clear previous meshes
-      activeMeshes.forEach(mesh => scene.remove(mesh));
-      activeMeshes = [];
-      hoveredMesh = null;
-      selectedMesh = null;
-
-      // Camera reset
-      const r = objData.viewRadius || 15;
-      camera.position.set(r * 0.7, r * 0.5, r * 0.8);
-      controls.target.set(0, 0, 0);
-      controls.update();
-
-      // Reset explode state
-      isExploded = false;
-      currentExplodeFactor = 0;
-      targetExplodeFactor = 0;
-      isUserDraggingSlider = false;
-      updateExplosion(0);
-      document.getElementById('explodeSlider').value = 0;
-      document.getElementById('explodeFactorLabel').textContent = '0%';
-      updateToggleButtonUI();
-
-      // Calculate centroid of the parts for natural explosion vector
-      let sumX = 0, sumY = 0, sumZ = 0;
-      objData.parts.forEach(p => {
-        sumX += p.position[0];
-        sumY += p.position[1];
-        sumZ += p.position[2];
-      });
-      const center = new THREE.Vector3(
-        sumX / objData.parts.length,
-        sumY / objData.parts.length,
-        sumZ / objData.parts.length
-      );
-
-      // Build Three.js meshes
-      objData.parts.forEach(part => {
-        const geom = createGeometry(part.geometry);
-        const mat = new THREE.MeshStandardMaterial({
-          color: part.color,
-          roughness: 0.35,
-          metalness: 0.25,
-          wireframe: isWireframe,
-          transparent: !!part.transparent,
-          opacity: part.opacity !== undefined ? part.opacity : 1.0
-        });
-
-        const mesh = new THREE.Mesh(geom, mat);
-        mesh.position.set(...part.position);
-
-        if (part.rotation) {
-          mesh.rotation.set(...part.rotation);
-        }
-
-        // Store explosion vector outwards from centroid
-        const origPos = new THREE.Vector3(...part.position);
-        let dir = origPos.clone().sub(center);
-        if (dir.length() < 0.2) {
-          // fallback radial vector if centered
-          dir = new THREE.Vector3(0, 1, 0);
-        } else {
-          dir.normalize();
-        }
-
-        mesh.userData = {
-          partData: part,
-          originalPosition: origPos.clone(),
-          explodeDirection: dir,
-          originalColor: part.color
-        };
-
-        scene.add(mesh);
-        activeMeshes.push(mesh);
-      });
-
-      // Update UI panels
-      updateUI();
-
-      // Trigger first part explanation immediately with bundled description
-      if (objData.parts.length > 0) {
-        showExplanation(objData.parts[0], activeMeshes[0]);
-      }
-    }
-
-    function updateExplosion(factor) {
-      const objData = OBJECTS[currentObjectId];
-      if (!objData) return;
-      const maxDist = objData.explodeDistance || 4;
-
-      activeMeshes.forEach(mesh => {
-        const orig = mesh.userData.originalPosition;
-        const dir = mesh.userData.explodeDirection;
-        const offset = dir.clone().multiplyScalar(factor * maxDist);
-        mesh.position.copy(orig).add(offset);
-      });
-
-      document.getElementById('explodeFactorLabel').textContent = Math.round(factor * 100) + '%';
-    }
-
-    function toggleExplode() {
-      isExploded = !isExploded;
-      targetExplodeFactor = isExploded ? 1.0 : 0.0;
-      isUserDraggingSlider = false;
-      updateToggleButtonUI();
-    }
-
-    function updateToggleButtonUI() {
-      const btn = document.getElementById('toggleExplodeBtn');
-      const icon = document.getElementById('toggleExplodeIcon');
-      const text = document.getElementById('toggleExplodeText');
-      if (!btn) return;
-      if (isExploded) {
-        btn.className = 'px-3 py-2 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 border border-amber-500/40 text-xs font-semibold text-amber-300 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95';
-        if (icon) icon.textContent = '🔄';
-        if (text) text.textContent = 'Reassemble';
-      } else {
-        btn.className = 'px-3 py-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-xs font-semibold text-sky-300 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95';
-        if (icon) icon.textContent = '💥';
-        if (text) text.textContent = 'Explode View';
-      }
-    }
-
-    function showExplanation(part, mesh) {
-      if (!part) return;
-
-      // Update Top-Right Prominent Card
-      document.getElementById('activePartName').textContent = part.name;
-      document.getElementById('activePartId').textContent = `part_id: "${part.id}"`;
-
-      // 1. Instantly use local bundled description - guaranteed 100% visible with zero downtime!
-      const initialDesc = part.description || part.explanation || `Essential component of ${OBJECTS[currentObjectId].label}.`;
-      document.getElementById('explanationText').textContent = initialDesc;
-
-      // Update Sidebar Quick Summary
-      const sidebarDot = document.getElementById('sidebarPartDot');
-      const sidebarName = document.getElementById('sidebarPartName');
-      const sidebarGeom = document.getElementById('sidebarPartGeom');
-      const sidebarDesc = document.getElementById('sidebarPartDesc');
-      if (sidebarName) sidebarName.textContent = part.name;
-      if (sidebarDesc) sidebarDesc.textContent = initialDesc;
-      if (sidebarGeom) sidebarGeom.textContent = part.geometry ? part.geometry.type : 'mesh';
-      if (sidebarDot) sidebarDot.style.backgroundColor = '#' + part.color.toString(16).padStart(6, '0');
-
-      const hex = '#' + part.color.toString(16).padStart(6, '0');
-      document.getElementById('partColorIndicator').style.backgroundColor = hex;
-
-      // Geometry summary
-      const g = part.geometry;
-      if (g) {
-        const argsStr = g.args ? g.args.map(a => typeof a === 'number' ? a.toFixed(1) : a).join(', ') : '';
-        document.getElementById('geometryBadge').textContent = `${g.type} [${argsStr}]`;
-      }
-
-      // Highlight in parts list
-      document.querySelectorAll('.part-item-btn').forEach(btn => {
-        if (btn.dataset.partId === part.id) {
-          btn.classList.add('border-sky-500', 'bg-sky-500/20');
-          btn.classList.remove('border-slate-800');
-        } else {
-          btn.classList.remove('border-sky-500', 'bg-sky-500/20');
-          btn.classList.add('border-slate-800');
-        }
-      });
-
-      // 2. Enrich via backend Claude API if running (silent fallback if offline)
-      const objectLabel = OBJECTS[currentObjectId].label;
-      const statusInd = document.getElementById('statusIndicator');
-      const statusBadge = document.getElementById('aiStatusBadge');
-
-      getDescription(currentObjectId, part.id, objectLabel, part.name).then((res) => {
-        if (document.getElementById('activePartId').textContent === `part_id: "${part.id}"`) {
-          if (res && res.description && res.description.length > 5) {
-            document.getElementById('explanationText').textContent = res.description;
-            if (sidebarDesc) sidebarDesc.textContent = res.description;
-          }
-          if (res && res.source === 'ai') {
-            if (statusBadge) statusBadge.textContent = 'Claude AI Live';
-            if (statusInd) statusInd.innerHTML = `<span class="text-sky-400 font-mono">Claude AI Active</span>`;
-          } else {
-            if (statusBadge) statusBadge.textContent = 'Component Breakdown';
-            if (statusInd) statusInd.innerHTML = `<span class="text-emerald-400">Ready</span>`;
-          }
-        }
-      }).catch(() => {
-        if (statusBadge) statusBadge.textContent = 'Component Breakdown';
-        if (statusInd) statusInd.innerHTML = `<span class="text-emerald-400">Ready</span>`;
-      });
-    }
-
-    function onMouseMove(event) {
-      const rect = mount.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(activeMeshes);
-
-      if (intersects.length > 0) {
-        const hit = intersects[0].object;
-        if (hoveredMesh !== hit) {
-          if (hoveredMesh && hoveredMesh !== selectedMesh) {
-            hoveredMesh.material.emissive.setHex(0x000000);
-          }
-          hoveredMesh = hit;
-          hoveredMesh.material.emissive.setHex(0x38bdf8);
-          hoveredMesh.material.emissiveIntensity = 0.35;
-          showExplanation(hoveredMesh.userData.partData, hoveredMesh);
-        }
-      } else {
-        if (hoveredMesh && hoveredMesh !== selectedMesh) {
-          hoveredMesh.material.emissive.setHex(0x000000);
-          hoveredMesh = null;
-        }
-      }
-    }
-
-    function onCanvasClick(event) {
-      // Check if it was a drag or a click
-      const dist = Math.hypot(event.clientX - pointerDownPos.x, event.clientY - pointerDownPos.y);
-      const elapsed = Date.now() - pointerDownPos.time;
-      if (dist > 6 || elapsed > 350) return; // user was dragging camera
-
-      if (hoveredMesh) {
-        if (selectedMesh && selectedMesh !== hoveredMesh) {
-          selectedMesh.material.emissive.setHex(0x000000);
-        }
-        selectedMesh = hoveredMesh;
-        selectedMesh.material.emissive.setHex(0xf5a623);
-        selectedMesh.material.emissiveIntensity = 0.5;
-        showExplanation(selectedMesh.userData.partData, selectedMesh);
-      } else {
-        // Click on empty space: Explode / Reassemble as previous!
-        toggleExplode();
-      }
-    }
-
-    function onWindowResize() {
-      camera.aspect = mount.clientWidth / mount.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(mount.clientWidth, mount.clientHeight);
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-
-      if (!isUserDraggingSlider) {
-        // Smooth physics-like lerp to targetExplodeFactor (as previous)
-        const diff = targetExplodeFactor - currentExplodeFactor;
-        if (Math.abs(diff) > 0.001) {
-          currentExplodeFactor += diff * 0.08;
-          updateExplosion(currentExplodeFactor);
-          document.getElementById('explodeSlider').value = currentExplodeFactor;
-        } else if (currentExplodeFactor !== targetExplodeFactor) {
-          currentExplodeFactor = targetExplodeFactor;
-          updateExplosion(currentExplodeFactor);
-          document.getElementById('explodeSlider').value = currentExplodeFactor;
-        }
-      }
-
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    // -------------------------------------------------------------
-    // UI BUILDER & INTERACTIVITY
-    // -------------------------------------------------------------
-    function updateUI() {
-      const obj = OBJECTS[currentObjectId];
-      document.getElementById('currentObjectHeading').textContent = obj.label;
-      document.getElementById('currentObjectMeta').textContent = `ViewRadius: ${obj.viewRadius} | ExplodeDist: ${obj.explodeDistance}`;
-      document.getElementById('partCountBadge').textContent = `${obj.parts.length} components`;
-
-      // Render Parts List in Left Sidebar
-      const partsContainer = document.getElementById('partsList');
-      partsContainer.innerHTML = '';
-
-      obj.parts.forEach(part => {
-        const hex = '#' + part.color.toString(16).padStart(6, '0');
-        const item = document.createElement('div');
-        item.className = 'part-item-btn p-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 cursor-pointer transition-all flex items-center justify-between group select-none';
-        item.dataset.partId = part.id;
-        item.innerHTML = `
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span class="w-3 h-3 rounded-full shrink-0 shadow-sm" style="background-color: ${hex}"></span>
-            <div class="truncate">
-              <div class="text-xs font-semibold text-slate-200 group-hover:text-white truncate">${part.name}</div>
-              <div class="text-[10px] font-mono text-slate-500 truncate">${part.geometry.type} • ${part.id}</div>
-            </div>
+  <!-- Object Identification Quiz Modal -->
+  <div id="quizModal"
+    class="fixed inset-0 bg-[#090d14]/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 hidden">
+    <div
+      class="bg-[#10151f] border border-[#29364b] rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Quiz Header -->
+      <div class="px-5 py-3.5 border-b border-[#242e40] flex items-center justify-between bg-[#131924]">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
           </div>
-          <svg class="w-3.5 h-3.5 text-slate-600 group-hover:text-sky-400 transition-colors shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        `;
-
-        item.addEventListener('mouseenter', () => {
-          const mesh = activeMeshes.find(m => m.userData.partData.id === part.id);
-          if (mesh) {
-            if (hoveredMesh && hoveredMesh !== mesh) hoveredMesh.material.emissive.setHex(0x000000);
-            hoveredMesh = mesh;
-            mesh.material.emissive.setHex(0x38bdf8);
-            mesh.material.emissiveIntensity = 0.35;
-            showExplanation(part, mesh);
-          }
-        });
-
-        item.addEventListener('mouseleave', () => {
-          const mesh = activeMeshes.find(m => m.userData.partData.id === part.id);
-          if (mesh && mesh !== selectedMesh) {
-            mesh.material.emissive.setHex(0x000000);
-          }
-        });
-
-        item.addEventListener('click', () => {
-          const mesh = activeMeshes.find(m => m.userData.partData.id === part.id);
-          if (mesh) {
-            if (selectedMesh) selectedMesh.material.emissive.setHex(0x000000);
-            selectedMesh = mesh;
-            selectedMesh.material.emissive.setHex(0xf5a623);
-            selectedMesh.material.emissiveIntensity = 0.5;
-            showExplanation(part, mesh);
-          }
-        });
-
-        partsContainer.appendChild(item);
-      });
-    }
-
-    const OBJECT_ICONS = {
-      computer: '🖥️', atom: '⚛️', 'solar-system': '🪐', tv: '📺',
-      'mobile-phone': '📱', refrigerator: '🧊', car: '🚗', bicycle: '🚲',
-      laptop: '💻', 'washing-machine': '🫧', 'air-conditioner': '❄️',
-    };
-
-    function renderSelectorGrid() {
-      const grid = document.getElementById('objectSelectorGrid');
-      grid.innerHTML = '';
-
-      const ids = Object.keys(OBJECTS);
-      document.getElementById('libraryCountBadge').textContent = `${ids.length} items`;
-
-      ids.forEach(id => {
-        const def = OBJECTS[id];
-        const isActive = currentObjectId === id;
-        const btn = document.createElement('button');
-        btn.className = `p-1.5 rounded-lg border text-left flex items-center gap-1.5 transition-all ${isActive
-            ? 'bg-sky-500/20 border-sky-500/60 text-white font-semibold shadow-sm'
-            : 'bg-slate-900/90 border-slate-800 hover:bg-slate-800 text-slate-300'
-          }`;
-        btn.innerHTML = `
-          <span class="text-sm shrink-0">${OBJECT_ICONS[id] || '🔧'}</span>
-          <div class="leading-tight truncate">
-            <div class="text-[11px] truncate">${def.label}</div>
+          <div>
+            <h3 id="quizTitle" class="font-semibold text-white text-xs sm:text-sm">Component Identification Quiz</h3>
+            <span id="quizObjectSubhead" class="text-[11px] text-slate-400">Model: Computer</span>
           </div>
-        `;
-        btn.onclick = () => {
-          document.getElementById('canvasLoader').classList.remove('hidden');
-          setTimeout(() => {
-            loadObject(id);
-            renderSelectorGrid();
-            document.getElementById('canvasLoader').classList.add('hidden');
-          }, 100);
-        };
-        grid.appendChild(btn);
-      });
-    }
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="closeQuizModalBtn"
+            class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#1e2736] transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
-    // Event handlers
-    const explodeSlider = document.getElementById('explodeSlider');
-    explodeSlider.addEventListener('input', (e) => {
-      isUserDraggingSlider = true;
-      currentExplodeFactor = parseFloat(e.target.value);
-      targetExplodeFactor = currentExplodeFactor;
-      isExploded = currentExplodeFactor > 0.5;
-      updateToggleButtonUI();
-      updateExplosion(currentExplodeFactor);
-    });
+      <!-- Quiz Dynamic Container -->
+      <div id="quizContentArea" class="p-6 overflow-y-auto flex-1 text-slate-200 space-y-4">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
 
-    explodeSlider.addEventListener('change', () => {
-      isUserDraggingSlider = false;
-    });
-
-    document.getElementById('toggleExplodeBtn').addEventListener('click', () => {
-      toggleExplode();
-    });
-
-    document.getElementById('resetViewBtn').addEventListener('click', () => {
-      const objData = OBJECTS[currentObjectId];
-      const r = objData.viewRadius || 15;
-      camera.position.set(r * 0.7, r * 0.5, r * 0.8);
-      controls.target.set(0, 0, 0);
-      controls.update();
-      isExploded = false;
-      targetExplodeFactor = 0;
-      currentExplodeFactor = 0;
-      isUserDraggingSlider = false;
-      updateExplosion(0);
-      document.getElementById('explodeSlider').value = 0;
-      updateToggleButtonUI();
-    });
-
-    document.getElementById('toggleWireframeBtn').addEventListener('click', () => {
-      isWireframe = !isWireframe;
-      activeMeshes.forEach(m => m.material.wireframe = isWireframe);
-    });
-
-    // Code Modal
-    const codeModal = document.getElementById('codeModal');
-    document.getElementById('viewCodeModalBtn').addEventListener('click', () => {
-      const cleanObjCode = `// objects.js registry export\nconst OBJECTS = ` + JSON.stringify(OBJECTS, null, 2) + ';';
-      document.getElementById('codeModalContent').textContent = cleanObjCode;
-      codeModal.classList.remove('hidden');
-    });
-
-    document.getElementById('closeCodeModalBtn').addEventListener('click', () => {
-      codeModal.classList.add('hidden');
-    });
-
-    document.getElementById('copyCodeBtn').addEventListener('click', () => {
-      const code = document.getElementById('codeModalContent').textContent;
-      navigator.clipboard.writeText(code);
-      const btn = document.getElementById('copyCodeBtn');
-      btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = 'Copy JS', 2000);
-    });
-
-    // Search input
-    document.getElementById('objectSearchInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const query = e.target.value.toLowerCase().trim();
-        const foundKey = Object.keys(OBJECTS).find(k => k.includes(query) || OBJECTS[k].label.toLowerCase().includes(query));
-        if (foundKey) {
-          loadObject(foundKey);
-          renderSelectorGrid();
-        }
-      }
-    });
-
-    // Initialize application
-    window.addEventListener('DOMContentLoaded', () => {
-      initThree();
-      renderSelectorGrid();
-    });
-  </script>
+  <!-- Modular Application Scripts -->
+  <script src="materials.js"></script>
+  <script src="quiz.js"></script>
+  <script src="app.js"></script>
 </body>
 
 </html>

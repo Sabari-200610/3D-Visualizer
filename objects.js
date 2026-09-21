@@ -130,51 +130,22 @@ const OBJECTS = {
   },
 
   'solar-system': {
-    label: 'Solar System (simplified)',
-    viewRadius: 10,
-    explodeDistance: 2.2,
+    label: 'Solar System',
+    viewRadius: 22,
+    explodeDistance: 4.5,
     parts: [
-      {
-        id: 'sun',
-        name: 'The Sun',
-        color: 0xf5a623,
-        geometry: { type: 'sphere', args: [0.8, 24, 24] },
-        position: [0, 0, 0],
-        description: 'A G-type main-sequence star at the gravitational center of our solar system, fusing hydrogen into helium and radiating the energy that sustains life.'
-      },
-      {
-        id: 'mercury',
-        name: 'Mercury',
-        color: 0x94a3b8,
-        geometry: { type: 'sphere', args: [0.12, 14, 14] },
-        position: [1.6, 0, 0],
-        description: 'The innermost terrestrial planet, characterized by a cratered silicate surface, a large metallic iron core, and extreme thermal swings.'
-      },
-      {
-        id: 'venus',
-        name: 'Venus',
-        color: 0xf5a623,
-        geometry: { type: 'sphere', args: [0.2, 14, 14] },
-        position: [2.2, 0, 0.4],
-        description: 'Earth’s twin in size, enveloped by a suffocating carbon dioxide atmosphere and sulfuric acid clouds causing a runaway greenhouse effect.'
-      },
-      {
-        id: 'earth',
-        name: 'Earth',
-        color: 0x38bdf8,
-        geometry: { type: 'sphere', args: [0.22, 16, 16] },
-        position: [2.9, 0, -0.4],
-        description: 'The third planet from the Sun and the only known world to harbor liquid oceans, a protective magnetic field, an oxygen atmosphere, and life.'
-      },
-      {
-        id: 'mars',
-        name: 'Mars',
-        color: 0xef4444,
-        geometry: { type: 'sphere', args: [0.16, 14, 14] },
-        position: [3.6, 0, 0.2],
-        description: 'The Red Planet, renowned for iron-oxide soil, dormant giant volcanoes like Olympus Mons, ancient dry riverbeds, and frozen polar ice caps.'
-      },
-    ],
+      { id: 'sun', name: 'The Sun', color: 0xffa500, geometry: { type: 'sphere', args: [1.6, 32, 32] }, position: [0, 0, 0], materialType: 'star', description: 'A G-type main-sequence star fusing 600 million tons of hydrogen per second, radiating 3.8e26 watts of energy that illuminates and anchors the solar system.' },
+      { id: 'mercury', name: 'Mercury', color: 0x7a7a7a, geometry: { type: 'sphere', args: [0.16, 20, 20] }, position: [2.8, 0, 0], materialType: 'rocky', description: 'Innermost and smallest planet, heavily cratered, with extreme temperature swings from -173C to 427C and a disproportionately large iron core.' },
+      { id: 'venus', name: 'Venus', color: 0xe8c56a, geometry: { type: 'sphere', args: [0.28, 24, 24] }, position: [4.2, 0, 0.3], materialType: 'rocky', description: 'Earth twin in size, shrouded in sulfuric acid clouds with surface temperatures of 465C from a runaway greenhouse effect.' },
+      { id: 'earth', name: 'Earth', color: 0x2a7dc9, geometry: { type: 'sphere', args: [0.30, 28, 28] }, position: [5.6, 0, -0.3], materialType: 'earth', description: 'The only known planet harboring life, with liquid oceans covering 71% of surface, a protective magnetosphere and an oxygen-nitrogen atmosphere.' },
+      { id: 'mars', name: 'Mars', color: 0xc1440e, geometry: { type: 'sphere', args: [0.22, 22, 22] }, position: [7.0, 0, 0.2], materialType: 'rocky', description: 'The Red Planet with iron-oxide soils, Olympus Mons (21 km tall volcano) and Valles Marineris (4,000 km canyon system).' },
+      { id: 'jupiter', name: 'Jupiter', color: 0xc88b3a, geometry: { type: 'sphere', args: [0.85, 32, 32] }, position: [9.5, 0, -0.4], materialType: 'gas-giant', description: 'The largest planet with the Great Red Spot storm larger than Earth, 95 known moons, and a magnetic field 20,000x stronger than Earth.' },
+      { id: 'saturn', name: 'Saturn', color: 0xe4d191, geometry: { type: 'sphere', args: [0.72, 32, 32] }, position: [12.2, 0, 0.5], materialType: 'gas-giant', description: 'The ringed jewel of the solar system, the least dense planet, with a ring system of ice and rock spanning 282,000 km in diameter.' },
+      { id: 'saturn-ring', name: 'Saturn Ring System', color: 0xd4c090, geometry: { type: 'cylinder', args: [1.55, 2.2, 0.04, 64] }, position: [12.2, 0, 0.5], materialType: 'ring', transparent: true, opacity: 0.6, description: 'Billions of ice and rock particles from dust to mountain-sized boulders orbiting Saturn in the equatorial plane.' },
+      { id: 'uranus', name: 'Uranus', color: 0x7de8e8, geometry: { type: 'sphere', args: [0.54, 28, 28] }, position: [14.8, 0, -0.2], materialType: 'ice-giant', description: 'The sideways ice giant rotating on its side with 97.8 degree axial tilt, with methane giving it a distinctive cyan color.' },
+      { id: 'neptune', name: 'Neptune', color: 0x3f54ba, geometry: { type: 'sphere', args: [0.50, 28, 28] }, position: [17.0, 0, 0.4], materialType: 'ice-giant', description: 'The windiest planet with storms reaching 2,100 km/h. Deep blue from methane light absorption. Has 16 known moons including Triton.' },
+      { id: 'pluto', name: 'Pluto (Dwarf Planet)', color: 0xbba88a, geometry: { type: 'sphere', args: [0.10, 16, 16] }, position: [19.0, 0, -0.5], materialType: 'rocky', description: 'A dwarf planet in the Kuiper Belt with a heart-shaped nitrogen ice plain (Tombaugh Regio) and a 248-year elliptical orbit.' }
+    ]
   },
 
   tv: {
