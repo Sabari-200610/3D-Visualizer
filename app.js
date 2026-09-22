@@ -19,6 +19,63 @@ let currentExplodeFactor = 0;
 let targetExplodeFactor = 0;
 let isUserDraggingSlider = false;
 
+// Scene Lighting & Environment objects
+let dirLight1, dirLight2, rimLight, ambientLight, bounceLight;
+let contactShadowMesh = null;
+let groundShadowPlane = null;
+var envMap = null;
+
+// Camera Smooth Transition
+let cameraTransition = null;
+
+// X-Ray / Isolate Inspection Mode
+let isXRayMode = false;
+
+// Realistic Matte / Satin Studio Lighting Presets (Not shiny / No harsh glare)
+const LIGHTING_PRESETS = {
+  studio: {
+    name: 'Studio Clean',
+    bg: 0x0b0e14,
+    keyColor: 0xf6ede2,
+    keyIntensity: 1.15,
+    fillColor: 0x8aa5c8,
+    fillIntensity: 0.5,
+    rimColor: 0x9ec0e6,
+    rimIntensity: 0.38,
+    ambientColor: 0xdce6f2,
+    ambientIntensity: 0.65,
+    exposure: 1.05,
+  },
+  darkroom: {
+    name: 'Cinematic Dark',
+    bg: 0x05070a,
+    keyColor: 0xffedd8,
+    keyIntensity: 1.35,
+    fillColor: 0x506580,
+    fillIntensity: 0.35,
+    rimColor: 0x7aa5d6,
+    rimIntensity: 0.55,
+    ambientColor: 0x708095,
+    ambientIntensity: 0.35,
+    exposure: 1.0,
+  },
+  cyber: {
+    name: 'Cyber Neon',
+    bg: 0x070913,
+    keyColor: 0x38bdf8,
+    keyIntensity: 1.25,
+    fillColor: 0x818cf8,
+    fillIntensity: 0.45,
+    rimColor: 0xf43f5e,
+    rimIntensity: 0.6,
+    ambientColor: 0x475569,
+    ambientIntensity: 0.45,
+    exposure: 1.1,
+  },
+};
+const PRESET_KEYS = ['studio', 'darkroom', 'cyber'];
+let currentPresetIndex = 0;
+
 // API integration with graceful local fallback
 const API_URL = window.location.protocol.startsWith('http')
   ? '/api/explain'
@@ -231,54 +288,195 @@ function getPartFinish(part) {
   return 'High-tensile Engineered Composite';
 }
 
-let mount, raycaster, mouse, pointerDownPos;
-var envMap = null;
+// -------------------------------------------------------------
+// ENVIRONMENT & CONTACT SHADOW GENERATORS (Soft Diffuse, Non-Glare)
+// -------------------------------------------------------------
 
 function createEnvironmentMap() {
-  const size = 256;
+  const size = 512;
   const faces = [];
+
   for (let f = 0; f < 6; f++) {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext('2d');
-    const isTop = f === 2;
-    const isBottom = f === 3;
 
-    const grad = ctx.createLinearGradient(0, 0, 0, size);
-    if (isTop) {
-      grad.addColorStop(0, '#1a2436');
-      grad.addColorStop(1, '#111824');
-    } else if (isBottom) {
-      grad.addColorStop(0, '#0c1018');
-      grad.addColorStop(1, '#06080c');
-    } else {
-      grad.addColorStop(0, '#1c283c');
-      grad.addColorStop(0.3, '#111824');
-      grad.addColorStop(0.6, '#151e2e');
-      grad.addColorStop(1, '#0e1420');
+    // Soft dark studio ambient backdrop
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, size);
+    bgGrad.addColorStop(0, '#151b24');
+    bgGrad.addColorStop(0.5, '#0d1219');
+    bgGrad.addColorStop(1, '#080a0e');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, size, size);
+
+    if (f === 2) {
+      // Top (+Y): Soft diffuse ceiling light (no glaring white blocks)
+      const topGrad = ctx.createRadialGradient(
+        size / 2,
+        size / 2,
+        0,
+        size / 2,
+        size / 2,
+        size * 0.45
+      );
+      topGrad.addColorStop(0, 'rgba(180, 205, 235, 0.4)');
+      topGrad.addColorStop(0.5, 'rgba(90, 120, 160, 0.2)');
+      topGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(0, 0, size, size);
+    } else if (f === 3) {
+      // Bottom (-Y): Gentle floor bounce
+      const floorGrad = ctx.createRadialGradient(
+        size / 2,
+        size / 2,
+        0,
+        size / 2,
+        size / 2,
+        size * 0.5
+      );
+      floorGrad.addColorStop(0, '#161d26');
+      floorGrad.addColorStop(1, '#05070a');
+      ctx.fillStyle = floorGrad;
+      ctx.fillRect(0, 0, size, size);
+    } else if (f === 0) {
+      // +X: Soft Warm Diffuse Key
+      const keyGrad = ctx.createRadialGradient(
+        size * 0.5,
+        size * 0.4,
+        0,
+        size * 0.5,
+        size * 0.4,
+        size * 0.45
+      );
+      keyGrad.addColorStop(0, 'rgba(235, 220, 200, 0.35)');
+      keyGrad.addColorStop(0.6, 'rgba(180, 160, 140, 0.12)');
+      keyGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = keyGrad;
+      ctx.fillRect(0, 0, size, size);
+    } else if (f === 1) {
+      // -X: Soft Cool Diffuse Fill
+      const fillGrad = ctx.createRadialGradient(
+        size * 0.5,
+        size * 0.45,
+        0,
+        size * 0.5,
+        size * 0.45,
+        size * 0.45
+      );
+      fillGrad.addColorStop(0, 'rgba(160, 195, 235, 0.3)');
+      fillGrad.addColorStop(0.6, 'rgba(90, 130, 180, 0.1)');
+      fillGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = fillGrad;
+      ctx.fillRect(0, 0, size, size);
+    } else if (f === 4) {
+      // +Z: Front Camera Fill
+      const frontGrad = ctx.createRadialGradient(
+        size / 2,
+        size * 0.4,
+        0,
+        size / 2,
+        size * 0.4,
+        size * 0.4
+      );
+      frontGrad.addColorStop(0, 'rgba(180, 200, 225, 0.25)');
+      frontGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = frontGrad;
+      ctx.fillRect(0, 0, size, size);
+    } else if (f === 5) {
+      // -Z: Soft Rim strip
+      const rimGrad = ctx.createLinearGradient(0, 0, size, 0);
+      rimGrad.addColorStop(0, 'transparent');
+      rimGrad.addColorStop(0.5, 'rgba(200, 220, 245, 0.25)');
+      rimGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = rimGrad;
+      ctx.fillRect(0, size * 0.1, size, size * 0.8);
     }
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, size, size);
-    ctx.globalAlpha = 0.06;
-    const radGrad = ctx.createRadialGradient(
-      size * 0.3,
-      size * 0.35,
-      0,
-      size * 0.3,
-      size * 0.35,
-      size * 0.6
-    );
-    radGrad.addColorStop(0, '#a0c0ff');
-    radGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = radGrad;
-    ctx.fillRect(0, 0, size, size);
-    ctx.globalAlpha = 1;
+
     faces.push(canvas);
   }
+
   const cubeTexture = new THREE.CubeTexture(faces);
+  cubeTexture.encoding = THREE.sRGBEncoding;
   cubeTexture.needsUpdate = true;
   return cubeTexture;
 }
+
+// Procedural Radial Soft Contact Shadow Texture
+function createContactShadowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+  grad.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
+  grad.addColorStop(0.2, 'rgba(0, 0, 0, 0.58)');
+  grad.addColorStop(0.45, 'rgba(0, 0, 0, 0.25)');
+  grad.addColorStop(0.7, 'rgba(0, 0, 0, 0.06)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 512, 512);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  return tex;
+}
+
+// -------------------------------------------------------------
+// BEVELED & SMOOTHED REALISTIC GEOMETRY GENERATOR
+// -------------------------------------------------------------
+function createRealisticGeometry(geomDef) {
+  if (geomDef.type === 'box') {
+    const args = [...geomDef.args];
+    const w = args[0] || 1;
+    const h = args[1] || 1;
+    const d = args[2] || 1;
+
+    const minDim = Math.min(w, h, d);
+    const bevel = Math.min(0.035, minDim * 0.1);
+
+    if (bevel > 0.005) {
+      try {
+        const shape = new THREE.Shape();
+        const hw = w / 2 - bevel;
+        const hh = h / 2 - bevel;
+        shape.absarc(hw, hh, bevel, 0, Math.PI / 2, false);
+        shape.absarc(-hw, hh, bevel, Math.PI / 2, Math.PI, false);
+        shape.absarc(-hw, -hh, bevel, Math.PI, Math.PI * 1.5, false);
+        shape.absarc(hw, -hh, bevel, Math.PI * 1.5, Math.PI * 2, false);
+
+        const geom = new THREE.ExtrudeGeometry(shape, {
+          depth: Math.max(0.005, d - 2 * bevel),
+          bevelEnabled: true,
+          bevelSegments: 2,
+          steps: 1,
+          bevelSize: bevel,
+          bevelThickness: bevel,
+          curveSegments: 4,
+        });
+        geom.center();
+        return geom;
+      } catch (e) {
+        return new THREE.BoxGeometry(w, h, d, 2, 2, 2);
+      }
+    }
+    return new THREE.BoxGeometry(w, h, d, 2, 2, 2);
+  } else if (geomDef.type === 'sphere') {
+    const r = geomDef.args[0] || 1;
+    return new THREE.SphereGeometry(r, 36, 36);
+  } else if (geomDef.type === 'cylinder') {
+    const rTop = geomDef.args[0] || 1;
+    const rBot = geomDef.args[1] || 1;
+    const h = geomDef.args[2] || 1;
+    const segs = Math.max(32, geomDef.args[3] || 32);
+    return new THREE.CylinderGeometry(rTop, rBot, h, segs, 1);
+  }
+  return new THREE.BoxGeometry(1, 1, 1, 2, 2, 2);
+}
+
+// -------------------------------------------------------------
+// THREE.JS INITIALIZATION & SCENE SETUP
+// -------------------------------------------------------------
+let mount, raycaster, mouse, pointerDownPos;
 
 function initThree() {
   mount = document.getElementById('canvasMount');
@@ -287,47 +485,49 @@ function initThree() {
   pointerDownPos = { x: 0, y: 0, time: 0 };
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b0e14);
+  scene.background = new THREE.Color(LIGHTING_PRESETS.studio.bg);
 
-  // Environment map
+  // Environment Map (Soft Diffuse IBL)
   envMap = createEnvironmentMap();
   window.envMap = envMap;
   scene.environment = envMap;
 
-  // Studio Floor Grid
-  const grid = new THREE.GridHelper(40, 40, 0x1c2538, 0x10151e);
-  grid.position.y = -3.5;
-  grid.material.opacity = 0.5;
-  grid.material.transparent = true;
-  scene.add(grid);
-
-  // Ground plane shadow receiver
-  const groundGeom = new THREE.PlaneGeometry(80, 80);
-  const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x080b10,
-    roughness: 0.95,
-    metalness: 0.0,
+  // Realistic Soft Contact Shadow plane (Grid is removed)
+  const shadowTex = createContactShadowTexture();
+  const shadowGeom = new THREE.PlaneGeometry(1, 1);
+  const shadowMat = new THREE.MeshBasicMaterial({
+    map: shadowTex,
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.85,
+    depthWrite: false,
   });
-  const ground = new THREE.Mesh(groundGeom, groundMat);
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -3.51;
-  ground.receiveShadow = true;
-  scene.add(ground);
+  contactShadowMesh = new THREE.Mesh(shadowGeom, shadowMat);
+  contactShadowMesh.rotation.x = -Math.PI / 2;
+  contactShadowMesh.renderOrder = 1;
+  scene.add(contactShadowMesh);
+
+  // Shadow receiver ground plane (transparent except where directional shadows fall)
+  const groundGeom = new THREE.PlaneGeometry(120, 120);
+  const groundMat = new THREE.ShadowMaterial({
+    opacity: 0.35,
+  });
+  groundShadowPlane = new THREE.Mesh(groundGeom, groundMat);
+  groundShadowPlane.rotation.x = -Math.PI / 2;
+  groundShadowPlane.receiveShadow = true;
+  scene.add(groundShadowPlane);
 
   // Camera & Renderer
-  const width = (mount && mount.clientWidth) ? mount.clientWidth : window.innerWidth;
-  const height = (mount && mount.clientHeight) ? mount.clientHeight : window.innerHeight;
+  const width = mount && mount.clientWidth ? mount.clientWidth : window.innerWidth;
+  const height = mount && mount.clientHeight ? mount.clientHeight : window.innerHeight;
   camera = new THREE.PerspectiveCamera(45, width / (height || 1), 0.1, 1000);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = LIGHTING_PRESETS.studio.exposure;
   renderer.physicallyCorrectLights = true;
   renderer.outputEncoding = THREE.sRGBEncoding;
   if (mount) mount.appendChild(renderer.domElement);
@@ -335,47 +535,57 @@ function initThree() {
   // Orbit Controls
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.06;
+  controls.dampingFactor = 0.05;
   controls.maxDistance = 60;
-  controls.minDistance = 2.5;
+  controls.minDistance = 2.0;
 
-  // Studio Multi-Light Setup
-  const hemiLight = new THREE.HemisphereLight(0xd0e0f8, 0x1a2238, 0.8);
-  scene.add(hemiLight);
-
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+  // Studio Multi-Light Setup (Diffused & non-shiny)
+  ambientLight = new THREE.AmbientLight(
+    LIGHTING_PRESETS.studio.ambientColor,
+    LIGHTING_PRESETS.studio.ambientIntensity
+  );
   scene.add(ambientLight);
 
-  const dirLight1 = new THREE.DirectionalLight(0xfff4e6, 1.6);
-  dirLight1.position.set(12, 22, 14);
+  // Key Light (Soft Directional Shadow Caster)
+  dirLight1 = new THREE.DirectionalLight(
+    LIGHTING_PRESETS.studio.keyColor,
+    LIGHTING_PRESETS.studio.keyIntensity
+  );
+  dirLight1.position.set(12, 20, 14);
   dirLight1.castShadow = true;
   dirLight1.shadow.mapSize.width = 2048;
   dirLight1.shadow.mapSize.height = 2048;
   dirLight1.shadow.camera.near = 0.5;
   dirLight1.shadow.camera.far = 60;
-  dirLight1.shadow.camera.left = -20;
-  dirLight1.shadow.camera.right = 20;
-  dirLight1.shadow.camera.top = 20;
-  dirLight1.shadow.camera.bottom = -20;
-  dirLight1.shadow.bias = -0.0005;
-  dirLight1.shadow.radius = 3;
+  dirLight1.shadow.camera.left = -16;
+  dirLight1.shadow.camera.right = 16;
+  dirLight1.shadow.camera.top = 16;
+  dirLight1.shadow.camera.bottom = -16;
+  dirLight1.shadow.bias = -0.0001;
+  dirLight1.shadow.normalBias = 0.02;
+  dirLight1.shadow.radius = 3.5;
   scene.add(dirLight1);
 
-  const dirLight2 = new THREE.DirectionalLight(0xa0b8e0, 0.6);
-  dirLight2.position.set(-14, -4, -10);
+  // Fill Light (Soft cool balanced fill)
+  dirLight2 = new THREE.DirectionalLight(
+    LIGHTING_PRESETS.studio.fillColor,
+    LIGHTING_PRESETS.studio.fillIntensity
+  );
+  dirLight2.position.set(-14, 8, -10);
   scene.add(dirLight2);
 
-  const rimLight = new THREE.DirectionalLight(0x88b0ff, 0.45);
-  rimLight.position.set(0, 8, -18);
+  // Rim Light (Soft grazing silhouette)
+  rimLight = new THREE.DirectionalLight(
+    LIGHTING_PRESETS.studio.rimColor,
+    LIGHTING_PRESETS.studio.rimIntensity
+  );
+  rimLight.position.set(-2, 12, -16);
   scene.add(rimLight);
 
-  const bounceLight = new THREE.PointLight(0xffe8c0, 0.3, 40);
+  // Floor Bounce Light
+  bounceLight = new THREE.PointLight(0xffeedd, 0.25, 45);
   bounceLight.position.set(0, -3, 8);
   scene.add(bounceLight);
-
-  const accentLight = new THREE.PointLight(0xc0d8ff, 0.25, 35);
-  accentLight.position.set(-6, 12, 4);
-  scene.add(accentLight);
 
   // Listeners
   window.addEventListener('resize', onWindowResize);
@@ -404,6 +614,10 @@ function initThree() {
       resetCameraView();
     } else if (e.key === 'w' || e.key === 'W') {
       toggleWireframe();
+    } else if (e.key === 'x' || e.key === 'X') {
+      toggleXRayMode();
+    } else if (e.key === 'l' || e.key === 'L') {
+      cycleLightingPreset();
     }
   });
 
@@ -411,18 +625,9 @@ function initThree() {
   animate();
 }
 
-function createGeometry(geomDef) {
-  if (geomDef.type === 'box') {
-    const args = [...geomDef.args];
-    return new THREE.BoxGeometry(args[0], args[1], args[2], 2, 2, 2);
-  } else if (geomDef.type === 'sphere') {
-    return new THREE.SphereGeometry(...geomDef.args);
-  } else if (geomDef.type === 'cylinder') {
-    return new THREE.CylinderGeometry(...geomDef.args);
-  }
-  return new THREE.BoxGeometry(1, 1, 1, 2, 2, 2);
-}
-
+// -------------------------------------------------------------
+// OBJECT LOADING & SCENE SETUP
+// -------------------------------------------------------------
 function loadObject(objId) {
   const objData = OBJECTS[objId];
   if (!objData) return;
@@ -469,9 +674,11 @@ function loadObject(objId) {
     sumZ / objData.parts.length
   );
 
-  // Build Three.js meshes
+  // Build Three.js meshes with beveled geometries & realistic matte PBR materials
+  const groupForBounds = new THREE.Group();
+
   objData.parts.forEach((part) => {
-    const geom = createGeometry(part.geometry);
+    const geom = createRealisticGeometry(part.geometry);
     const mat = createRealisticMaterial(part);
 
     const mesh = new THREE.Mesh(geom, mat);
@@ -480,6 +687,9 @@ function loadObject(objId) {
     if (part.rotation) {
       mesh.rotation.set(...part.rotation);
     }
+
+    mesh.castShadow = !part.transparent;
+    mesh.receiveShadow = true;
 
     const origPos = new THREE.Vector3(...part.position);
     let dir = origPos.clone().sub(center);
@@ -494,11 +704,31 @@ function loadObject(objId) {
       originalPosition: origPos.clone(),
       explodeDirection: dir,
       originalColor: part.color,
+      originalEmissive: {
+        color: mat.emissive ? mat.emissive.getHex() : 0x000000,
+        intensity: mat.emissiveIntensity || 0,
+      },
     };
 
     scene.add(mesh);
     activeMeshes.push(mesh);
+    groupForBounds.add(mesh.clone());
   });
+
+  // Calculate assembled bounding box to anchor contact shadow perfectly
+  const bbox = new THREE.Box3().setFromObject(groupForBounds);
+  const bottomY = bbox.min.y;
+  const sizeX = bbox.max.x - bbox.min.x;
+  const sizeZ = bbox.max.z - bbox.min.z;
+  const footprint = Math.max(sizeX, sizeZ) * 1.5;
+
+  if (contactShadowMesh) {
+    contactShadowMesh.position.set(center.x, bottomY - 0.015, center.z);
+    contactShadowMesh.scale.set(footprint, footprint, 1);
+  }
+  if (groundShadowPlane) {
+    groundShadowPlane.position.set(center.x, bottomY - 0.02, center.z);
+  }
 
   updateUI();
   rebuildFloatingLabels();
@@ -508,6 +738,9 @@ function loadObject(objId) {
   }
 }
 
+// -------------------------------------------------------------
+// EXPLODE VIEW & SLIDER LOGIC
+// -------------------------------------------------------------
 function updateExplosion(factor) {
   const objData = OBJECTS[currentObjectId];
   if (!objData) return;
@@ -540,6 +773,25 @@ function updateToggleButtonUI() {
   text.textContent = isExploded ? 'Reassemble' : 'Explode View';
 }
 
+// -------------------------------------------------------------
+// REFINED NON-DESTRUCTIVE HIGHLIGHTING
+// -------------------------------------------------------------
+function setMeshHighlight(mesh, hexColor, intensity) {
+  if (!mesh || !mesh.material) return;
+  mesh.material.emissive.setHex(hexColor);
+  mesh.material.emissiveIntensity = intensity;
+}
+
+function resetMeshHighlight(mesh) {
+  if (!mesh || !mesh.material) return;
+  const orig = mesh.userData.originalEmissive || { color: 0x000000, intensity: 0 };
+  mesh.material.emissive.setHex(orig.color);
+  mesh.material.emissiveIntensity = orig.intensity;
+}
+
+// -------------------------------------------------------------
+// INSPECTOR & SPECIFICATION DISPLAY
+// -------------------------------------------------------------
 function showExplanation(part, mesh) {
   if (!part) return;
 
@@ -621,6 +873,9 @@ function showExplanation(part, mesh) {
     .catch(() => {});
 }
 
+// -------------------------------------------------------------
+// MOUSE & INTERACTION CONTROLLER
+// -------------------------------------------------------------
 function onMouseMove(event) {
   if (!mount) return;
   const rect = mount.getBoundingClientRect();
@@ -634,19 +889,20 @@ function onMouseMove(event) {
     const hit = intersects[0].object;
     if (hoveredMesh !== hit) {
       if (hoveredMesh && hoveredMesh !== selectedMesh) {
-        hoveredMesh.material.emissive.setHex(0x000000);
-        hoveredMesh.material.emissiveIntensity = 0;
+        resetMeshHighlight(hoveredMesh);
       }
       hoveredMesh = hit;
-      hoveredMesh.material.emissive.setHex(0x3b82f6);
-      hoveredMesh.material.emissiveIntensity = 0.4;
+      if (hoveredMesh !== selectedMesh) {
+        setMeshHighlight(hoveredMesh, 0x38bdf8, 0.28);
+      }
       showExplanation(hoveredMesh.userData.partData, hoveredMesh);
+      if (isXRayMode) updateXRayVisuals();
     }
   } else {
     if (hoveredMesh && hoveredMesh !== selectedMesh) {
-      hoveredMesh.material.emissive.setHex(0x000000);
-      hoveredMesh.material.emissiveIntensity = 0;
+      resetMeshHighlight(hoveredMesh);
       hoveredMesh = null;
+      if (isXRayMode) updateXRayVisuals();
     }
   }
 }
@@ -658,15 +914,45 @@ function onCanvasClick(event) {
 
   if (hoveredMesh) {
     if (selectedMesh && selectedMesh !== hoveredMesh) {
-      selectedMesh.material.emissive.setHex(0x000000);
-      selectedMesh.material.emissiveIntensity = 0;
+      resetMeshHighlight(selectedMesh);
     }
     selectedMesh = hoveredMesh;
-    selectedMesh.material.emissive.setHex(0xf59e0b);
-    selectedMesh.material.emissiveIntensity = 0.55;
+    setMeshHighlight(selectedMesh, 0xf59e0b, 0.45);
     showExplanation(selectedMesh.userData.partData, selectedMesh);
+    if (isXRayMode) updateXRayVisuals();
   } else {
     toggleExplode();
+  }
+}
+
+// -------------------------------------------------------------
+// SMOOTH CAMERA TRANSITIONS
+// -------------------------------------------------------------
+function startCameraTransition(targetCamPos, targetLookAt, duration = 750) {
+  cameraTransition = {
+    startCamPos: camera.position.clone(),
+    endCamPos: targetCamPos.clone(),
+    startLookAt: controls.target.clone(),
+    endLookAt: targetLookAt.clone(),
+    startTime: performance.now(),
+    duration,
+  };
+}
+
+function updateCameraTransition() {
+  if (!cameraTransition) return;
+  const now = performance.now();
+  const elapsed = now - cameraTransition.startTime;
+  const t = Math.min(1.0, elapsed / cameraTransition.duration);
+
+  const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  camera.position.lerpVectors(cameraTransition.startCamPos, cameraTransition.endCamPos, ease);
+  controls.target.lerpVectors(cameraTransition.startLookAt, cameraTransition.endLookAt, ease);
+  controls.update();
+
+  if (t >= 1.0) {
+    cameraTransition = null;
   }
 }
 
@@ -675,18 +961,25 @@ function focusOnActivePart() {
   if (!part) return;
 
   const targetPos = part.position.clone();
-  controls.target.copy(targetPos);
-  camera.position.set(targetPos.x + 3.5, targetPos.y + 2.5, targetPos.z + 4);
-  controls.update();
+  const objData = OBJECTS[currentObjectId];
+  const r = objData && objData.viewRadius ? objData.viewRadius * 0.42 : 4.0;
+
+  const endCamPos = new THREE.Vector3(
+    targetPos.x + r * 0.7,
+    targetPos.y + r * 0.45,
+    targetPos.z + r * 0.85
+  );
+
+  startCameraTransition(endCamPos, targetPos);
 }
 
 function resetCameraView() {
   const objData = OBJECTS[currentObjectId];
   if (!objData) return;
   const r = objData.viewRadius || 15;
-  camera.position.set(r * 0.7, r * 0.5, r * 0.8);
-  controls.target.set(0, 0, 0);
-  controls.update();
+  const endCamPos = new THREE.Vector3(r * 0.7, r * 0.5, r * 0.8);
+  const endTarget = new THREE.Vector3(0, 0, 0);
+
   isExploded = false;
   targetExplodeFactor = 0;
   currentExplodeFactor = 0;
@@ -695,20 +988,117 @@ function resetCameraView() {
   const slider = document.getElementById('explodeSlider');
   if (slider) slider.value = 0;
   updateToggleButtonUI();
+
+  if (selectedMesh) {
+    resetMeshHighlight(selectedMesh);
+    selectedMesh = null;
+  }
+  if (isXRayMode) updateXRayVisuals();
+
+  startCameraTransition(endCamPos, endTarget);
 }
 
+// -------------------------------------------------------------
+// INTERACTIVE MODES: WIREFRAME, X-RAY, LIGHTING PRESETS
+// -------------------------------------------------------------
 function toggleWireframe() {
   isWireframe = !isWireframe;
   window.isWireframe = isWireframe;
   activeMeshes.forEach((m) => (m.material.wireframe = isWireframe));
+  const btn = document.getElementById('toggleWireframeBtn');
+  if (btn) {
+    if (isWireframe) {
+      btn.classList.add('bg-blue-600/30', 'border-blue-500/60', 'text-blue-300');
+    } else {
+      btn.classList.remove('bg-blue-600/30', 'border-blue-500/60', 'text-blue-300');
+    }
+  }
 }
 
 function toggleAutoRotate() {
   isAutoRotate = !isAutoRotate;
   controls.autoRotate = isAutoRotate;
-  controls.autoRotateSpeed = 1.5;
+  controls.autoRotateSpeed = 1.2;
   const btnText = document.getElementById('autoRotateText');
   if (btnText) btnText.textContent = isAutoRotate ? 'Stop Rotate' : 'Auto-Rotate';
+  const btn = document.getElementById('toggleAutoRotateBtn');
+  if (btn) {
+    if (isAutoRotate) {
+      btn.classList.add('bg-blue-600/30', 'border-blue-500/60', 'text-blue-300');
+    } else {
+      btn.classList.remove('bg-blue-600/30', 'border-blue-500/60', 'text-blue-300');
+    }
+  }
+}
+
+function toggleXRayMode() {
+  isXRayMode = !isXRayMode;
+  updateXRayVisuals();
+  const btn = document.getElementById('toggleXRayBtn');
+  if (btn) {
+    if (isXRayMode) {
+      btn.classList.add('bg-sky-500/25', 'border-sky-500/70', 'text-sky-300');
+    } else {
+      btn.classList.remove('bg-sky-500/25', 'border-sky-500/70', 'text-sky-300');
+    }
+  }
+}
+
+function updateXRayVisuals() {
+  activeMeshes.forEach((mesh) => {
+    const isTarget =
+      (selectedMesh && mesh === selectedMesh) || (hoveredMesh && mesh === hoveredMesh);
+    if (isXRayMode) {
+      if (isTarget || !selectedMesh) {
+        mesh.material.transparent = mesh.userData.partData.transparent || false;
+        mesh.material.opacity =
+          mesh.userData.partData.opacity !== undefined ? mesh.userData.partData.opacity : 1.0;
+        mesh.material.depthWrite = true;
+      } else {
+        mesh.material.transparent = true;
+        mesh.material.opacity = 0.16;
+        mesh.material.depthWrite = false;
+      }
+    } else {
+      mesh.material.transparent = mesh.userData.partData.transparent || false;
+      mesh.material.opacity =
+        mesh.userData.partData.opacity !== undefined ? mesh.userData.partData.opacity : 1.0;
+      mesh.material.depthWrite = true;
+    }
+  });
+}
+
+function applyLightingPreset(presetKey) {
+  const p = LIGHTING_PRESETS[presetKey] || LIGHTING_PRESETS.studio;
+
+  if (scene) scene.background = new THREE.Color(p.bg);
+  if (dirLight1) {
+    dirLight1.color.setHex(p.keyColor);
+    dirLight1.intensity = p.keyIntensity;
+  }
+  if (dirLight2) {
+    dirLight2.color.setHex(p.fillColor);
+    dirLight2.intensity = p.fillIntensity;
+  }
+  if (rimLight) {
+    rimLight.color.setHex(p.rimColor);
+    rimLight.intensity = p.rimIntensity;
+  }
+  if (ambientLight) {
+    ambientLight.color.setHex(p.ambientColor);
+    ambientLight.intensity = p.ambientIntensity;
+  }
+  if (renderer) {
+    renderer.toneMappingExposure = p.exposure;
+  }
+
+  const btnText = document.getElementById('lightingPresetText');
+  if (btnText) btnText.textContent = p.name;
+}
+
+function cycleLightingPreset() {
+  currentPresetIndex = (currentPresetIndex + 1) % PRESET_KEYS.length;
+  applyLightingPreset(PRESET_KEYS[currentPresetIndex]);
 }
 
 function onWindowResize() {
@@ -769,11 +1159,11 @@ function rebuildFloatingLabels() {
 
     labelEl.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (selectedMesh) selectedMesh.material.emissive.setHex(0x000000);
+      if (selectedMesh) resetMeshHighlight(selectedMesh);
       selectedMesh = mesh;
-      selectedMesh.material.emissive.setHex(0xd97706);
-      selectedMesh.material.emissiveIntensity = 0.5;
+      setMeshHighlight(selectedMesh, 0xf59e0b, 0.45);
       showExplanation(part, mesh);
+      if (isXRayMode) updateXRayVisuals();
     });
 
     wrap.appendChild(labelEl);
@@ -798,31 +1188,32 @@ function updateFloatingLabels() {
 
   if (!isVisible || floatingLabels.length === 0) return;
 
-  const width = (mount && mount.clientWidth) ? mount.clientWidth : window.innerWidth;
-  const height = (mount && mount.clientHeight) ? mount.clientHeight : window.innerHeight;
-  const halfW = width * 0.5;
-  const halfH = height * 0.5;
+  const rect = mount.getBoundingClientRect();
+  const halfW = rect.width / 2;
+  const halfH = rect.height / 2;
 
   floatingLabels.forEach((item) => {
     item.mesh.getWorldPosition(_projVector);
     _projVector.project(camera);
 
-    if (_projVector.z > 1) {
+    const isBehind = _projVector.z > 1.0;
+    if (isBehind) {
       item.labelEl.style.display = 'none';
       item.lineEl.style.display = 'none';
       item.dotEl.style.display = 'none';
       return;
     }
 
-    item.labelEl.style.display = 'block';
-    item.lineEl.style.display = 'block';
-    item.dotEl.style.display = 'block';
+    item.labelEl.style.display = '';
+    item.lineEl.style.display = '';
+    item.dotEl.style.display = '';
 
     const screenX = _projVector.x * halfW + halfW;
     const screenY = -_projVector.y * halfH + halfH;
 
-    const offsetX = screenX < halfW ? -42 : 42;
-    const offsetY = screenY < halfH ? -32 : 32;
+    const explodeDir = item.mesh.userData.explodeDirection;
+    const offsetX = explodeDir.x >= 0 ? 55 : -55;
+    const offsetY = explodeDir.y >= 0 ? -35 : 35;
 
     const labelX = screenX + offsetX;
     const labelY = screenY + offsetY;
@@ -839,8 +1230,13 @@ function updateFloatingLabels() {
   });
 }
 
+// -------------------------------------------------------------
+// MAIN RENDER ANIMATION LOOP
+// -------------------------------------------------------------
 function animate() {
   requestAnimationFrame(animate);
+
+  updateCameraTransition();
 
   if (!isUserDraggingSlider) {
     const diff = targetExplodeFactor - currentExplodeFactor;
@@ -880,7 +1276,7 @@ function updateUI() {
   const tblBadge = document.getElementById('tableTotalComponentsBadge');
   if (tblBadge) tblBadge.textContent = `${obj.parts.length} Components`;
 
-  // Sidebar parts list
+  // Sidebar parts list: Lengthier, roomier, cleanly structured
   const partsList = document.getElementById('partsList');
   if (partsList) {
     partsList.innerHTML = '';
@@ -893,38 +1289,37 @@ function updateUI() {
       btn.type = 'button';
       btn.setAttribute('data-part-id', part.id);
       btn.className =
-        'part-item-btn w-full p-2.5 rounded-lg border border-[#242e40] bg-[#121824] hover:bg-[#182232] hover:border-[#354663] text-left transition-all flex items-center justify-between group cursor-pointer';
+        'part-item-btn w-full px-3 py-2.5 rounded-lg border border-[#242e40] bg-[#121824] hover:bg-[#182232] hover:border-[#354663] text-left transition-all flex items-center justify-between group cursor-pointer shadow-sm';
 
       btn.innerHTML = `
-        <div class="flex items-center gap-2.5 min-w-0">
-          <span class="w-2.5 h-2.5 rounded-full shrink-0 border border-black/40 shadow-sm" style="background-color: ${hex}"></span>
-          <div class="truncate">
-            <div class="text-xs font-semibold text-slate-200 group-hover:text-white truncate">${part.name}</div>
-            <div class="text-[10px] text-slate-400 font-mono tracking-tight">${category}</div>
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <span class="w-3 h-3 rounded-full shrink-0 border border-black/40 shadow-sm" style="background-color: ${hex}"></span>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-semibold text-slate-100 group-hover:text-white truncate">${part.name}</div>
+            <div class="text-[10px] text-slate-400 font-mono tracking-tight truncate">${category}</div>
           </div>
         </div>
-        <span class="text-[9px] font-mono text-slate-500 bg-[#192230] px-1.5 py-0.5 rounded border border-[#273449] shrink-0 font-semibold">${String(
+        <span class="text-[10px] font-mono text-slate-400 bg-[#182130] px-2 py-0.5 rounded border border-[#273449] shrink-0 font-semibold ml-2">${String(
           index + 1
         ).padStart(2, '0')}</span>
       `;
 
-      btn.onclick = () => {
+      btn.addEventListener('click', () => {
         const mesh = activeMeshes.find((m) => m.userData.partData.id === part.id);
         if (mesh) {
-          if (selectedMesh) selectedMesh.material.emissive.setHex(0x000000);
+          if (selectedMesh) resetMeshHighlight(selectedMesh);
           selectedMesh = mesh;
-          selectedMesh.material.emissive.setHex(0xd97706);
-          selectedMesh.material.emissiveIntensity = 0.5;
+          setMeshHighlight(selectedMesh, 0xf59e0b, 0.45);
           showExplanation(part, mesh);
-          focusOnActivePart();
+          if (isXRayMode) updateXRayVisuals();
         }
-      };
+      });
 
       partsList.appendChild(btn);
     });
   }
 
-  // Specifications table below
+  // Specifications Table Body
   const tableBody = document.getElementById('specificationsTableBody');
   if (tableBody) {
     tableBody.innerHTML = '';
@@ -938,15 +1333,18 @@ function updateUI() {
       const tr = document.createElement('tr');
       tr.setAttribute('data-part-id', part.id);
       tr.className =
-        'spec-table-row border-b border-[#1e2736] hover:bg-[#151c28] transition-colors cursor-pointer text-xs text-slate-300';
+        'spec-table-row border-b border-[#1f2838] hover:bg-[#151c28] transition-colors cursor-pointer text-xs';
+
       tr.innerHTML = `
         <td class="py-3 px-4 font-mono text-slate-400">${String(index + 1).padStart(2, '0')}</td>
-        <td class="py-3 px-4 font-medium text-white flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${hex}"></span>
-          <span>${part.name}</span>
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full shrink-0 border border-black/30" style="background-color: ${hex}"></span>
+            <span class="font-medium text-slate-200">${part.name}</span>
+          </div>
         </td>
-        <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-[#1b2332] text-slate-300 border border-[#2b394e] text-[11px] font-mono">${category}</span></td>
-        <td class="py-3 px-4 font-mono text-slate-400">${dimensions}</td>
+        <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-[#161d2a] border border-[#253245] text-[10px] text-slate-300">${category}</span></td>
+        <td class="py-3 px-4 font-mono text-slate-300 text-[11px]">${dimensions}</td>
         <td class="py-3 px-4 text-slate-400">${finish}</td>
         <td class="py-3 px-4"><span class="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-mono"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active</span></td>
       `;
@@ -954,11 +1352,11 @@ function updateUI() {
       tr.addEventListener('click', () => {
         const mesh = activeMeshes.find((m) => m.userData.partData.id === part.id);
         if (mesh) {
-          if (selectedMesh) selectedMesh.material.emissive.setHex(0x000000);
+          if (selectedMesh) resetMeshHighlight(selectedMesh);
           selectedMesh = mesh;
-          selectedMesh.material.emissive.setHex(0xd97706);
-          selectedMesh.material.emissiveIntensity = 0.5;
+          setMeshHighlight(selectedMesh, 0xf59e0b, 0.45);
           showExplanation(part, mesh);
+          if (isXRayMode) updateXRayVisuals();
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
@@ -1101,6 +1499,8 @@ function setupAppListeners() {
   document.getElementById('resetViewBtn')?.addEventListener('click', resetCameraView);
   document.getElementById('toggleWireframeBtn')?.addEventListener('click', toggleWireframe);
   document.getElementById('toggleAutoRotateBtn')?.addEventListener('click', toggleAutoRotate);
+  document.getElementById('toggleXRayBtn')?.addEventListener('click', toggleXRayMode);
+  document.getElementById('cycleLightingBtn')?.addEventListener('click', cycleLightingPreset);
   document.getElementById('focusPartBtn')?.addEventListener('click', focusOnActivePart);
 
   // Inspector card toggle
@@ -1180,12 +1580,12 @@ function setupAppListeners() {
         if (foundPart) {
           const mesh = activeMeshes.find((m) => m.userData.partData.id === foundPart.id);
           if (mesh) {
-            if (selectedMesh) selectedMesh.material.emissive.setHex(0x000000);
+            if (selectedMesh) resetMeshHighlight(selectedMesh);
             selectedMesh = mesh;
-            selectedMesh.material.emissive.setHex(0xd97706);
-            selectedMesh.material.emissiveIntensity = 0.5;
+            setMeshHighlight(selectedMesh, 0xf59e0b, 0.45);
             showExplanation(foundPart, mesh);
             focusOnActivePart();
+            if (isXRayMode) updateXRayVisuals();
           }
         }
       }
