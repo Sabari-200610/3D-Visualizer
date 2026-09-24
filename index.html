@@ -77,6 +77,17 @@
 
     <!-- Header Actions -->
     <div class="flex items-center gap-2">
+      <!-- Persistent Help (?) Button -->
+      <button id="openHelpModalBtn"
+        class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-[#161d28] hover:bg-[#1e2736] border border-[#2a364a] text-slate-300 hover:text-white transition-colors"
+        title="Open Guide & Tips (?)">
+        <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Help</span>
+      </button>
+
       <a href="#specificationsSection"
         class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#161d28] hover:bg-[#1e2736] border border-[#2a364a] text-slate-300 hover:text-white transition-colors">
         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,75 +114,130 @@
 
     <!-- Left Explorer Sidebar: Clean, Unified, Fully Scrollable -->
     <!-- Left Explorer Sidebar: Clean, Unified, Roomy Components & Assembly Section -->
-    <aside class="w-full lg:w-96 xl:w-[410px] h-full border-r border-[#242e40] bg-[#10151f] flex flex-col z-20 shrink-0">
+    <aside class="w-full lg:w-[420px] xl:w-[450px] h-full border-r border-[#242e40] bg-[#0c1017] flex flex-col z-20 shrink-0 select-none">
 
-      <!-- Sidebar Top: Active Object Info & Model Picker (Compact header) -->
-      <div class="p-3 border-b border-[#242e40] bg-[#121824] shrink-0">
-        <div class="flex items-center justify-between mb-1.5">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+      <!-- Sidebar Top Header: Explorer Title & View Mode Switcher -->
+      <div class="px-3.5 py-2.5 border-b border-[#242e40] bg-[#111724] shrink-0">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-200">CAD Explorer</span>
+          </div>
+          <!-- View Mode Segmented Controls -->
+          <div class="inline-flex rounded-lg bg-[#0a0e16] p-0.5 border border-[#232f42] text-[11px]">
+            <button id="viewModeBalanced" type="button"
+              class="px-2.5 py-1 rounded-md font-medium transition-all bg-blue-600 text-white shadow-sm"
+              title="Split View: Evenly balance Model Library & Components">
+              ⚖️ Split
+            </button>
+            <button id="viewModeParts" type="button"
+              class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition-all"
+              title="Assembly View: Full height for parts hierarchy">
+              🧩 Parts
+            </button>
+            <button id="viewModeModels" type="button"
+              class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition-all"
+              title="Models View: Full height for model library">
+              📚 Models
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 1: Model Library Section -->
+      <div id="sidebarModelSection" class="flex flex-col border-b border-[#242e40] bg-[#0f1420] transition-all overflow-hidden"
+        style="flex: 0 0 42%; min-height: 150px;">
+        <div class="px-3.5 py-2 border-b border-[#1f2838] bg-[#131a29] flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
             <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
-            <span>Model Library</span>
-          </h2>
+            <span class="text-xs font-semibold text-slate-200">Model Library</span>
+          </div>
           <span id="libraryCountBadge"
-            class="text-[10px] font-mono bg-[#1a2230] text-slate-300 px-2 py-0.5 rounded border border-[#2b394e]">11
-            models</span>
+            class="text-[10px] font-mono bg-[#1a2334] text-slate-300 px-2 py-0.5 rounded border border-[#2b3a4e]">11 models</span>
         </div>
 
         <!-- Category Filter Tabs -->
-        <div id="categoryTabsRow" class="flex items-center gap-1 overflow-x-auto pb-1 mb-1.5 scrollbar-none"
-          style="scrollbar-width: none;">
-          <!-- Dynamically populated category tabs -->
+        <div class="px-3 py-1.5 border-b border-[#1b2434] bg-[#0c111a] shrink-0">
+          <div id="categoryTabsRow" class="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none"
+            style="scrollbar-width: none;">
+            <!-- Dynamically populated category tabs -->
+          </div>
         </div>
 
-        <!-- Quick Model Buttons (Compact, leaving max room for components) -->
-        <div id="objectSelectorGrid" class="grid grid-cols-2 gap-1.5 max-h-20 overflow-y-auto pr-1">
-          <!-- Populated dynamically via JS -->
+        <!-- Model Cards Grid Container -->
+        <div class="flex-1 overflow-y-auto p-2.5 overscroll-contain">
+          <div id="objectSelectorGrid" class="grid grid-cols-2 gap-2">
+            <!-- Populated dynamically via JS -->
+          </div>
         </div>
       </div>
 
-      <!-- Parts Hierarchy Header -->
-      <div class="px-3.5 py-2 bg-[#0e131c] border-b border-[#242e40] flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-2">
-          <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          <span class="text-xs font-semibold text-slate-200">Components & Assembly</span>
+      <!-- Section 2: Component Assembly Section -->
+      <div id="sidebarPartsSection" class="flex-1 flex flex-col min-h-0 bg-[#0e131d] overflow-hidden">
+        <!-- Parts Hierarchy Header -->
+        <div class="px-3.5 py-2 bg-[#121927] border-b border-[#242e40] flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span class="text-xs font-semibold text-slate-200">Components & Assembly</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button id="showAllPartsBtn" type="button"
+              class="px-1.5 py-0.5 text-[10px] rounded bg-[#1a2334] hover:bg-[#223046] text-slate-300 border border-[#2a384e] transition-colors"
+              title="Show all hidden components in 3D">
+              👁️ Show All
+            </button>
+            <span id="partCountBadge"
+              class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1a2334] text-slate-300 border border-[#2b3a4e]">0 parts</span>
+          </div>
         </div>
-        <span id="partCountBadge"
-          class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1a2230] text-slate-300 border border-[#2b394e]">0
-          parts</span>
-      </div>
 
-      <!-- Parts List (Enlarged and lengthier, shows 4+ full components simultaneously) -->
-      <div id="sidebarScrollArea" class="flex-1 min-h-[260px] lg:min-h-[290px] overflow-y-auto p-2.5 space-y-2 overscroll-contain">
-        <div id="partsList" class="space-y-2">
-          <!-- Rendered parts items -->
+        <!-- Filter Search inside Components -->
+        <div class="px-3 py-1.5 bg-[#0b0f17] border-b border-[#1e2738] shrink-0">
+          <div class="relative w-full">
+            <svg class="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input id="partFilterInput" type="text" placeholder="Filter component names..."
+              class="w-full bg-[#131926] border border-[#222d3e] focus:border-blue-500 text-[11px] rounded-md pl-7 pr-3 py-1 text-slate-200 placeholder-slate-500 outline-none transition-colors" />
+          </div>
+        </div>
+
+        <!-- Parts List: Clean, Evenly Spaced, Accessible Cards -->
+        <div id="sidebarScrollArea" class="flex-1 overflow-y-auto p-2.5 space-y-1.5 overscroll-contain">
+          <div id="partsList" class="space-y-1.5">
+            <!-- Rendered parts items -->
+          </div>
         </div>
       </div>
 
       <!-- Active Part Compact Status in Sidebar -->
-      <div id="sidebarPartSummary" class="px-3 py-2 bg-[#131924] border-t border-[#242e40] shrink-0">
+      <div id="sidebarPartSummary" class="px-3 py-2 bg-[#101622] border-t border-[#242e40] shrink-0">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2 min-w-0">
             <span id="sidebarPartDot" class="w-2.5 h-2.5 rounded-full shrink-0 bg-blue-500"></span>
             <span id="sidebarPartName" class="text-xs font-semibold text-white truncate">Component Description</span>
           </div>
           <span id="sidebarPartCategory"
-            class="text-[9px] uppercase tracking-wider font-semibold text-slate-400 bg-[#1c2433] px-1.5 py-0.5 rounded border border-[#2d3a4e] shrink-0">Subsystem</span>
+            class="text-[9px] uppercase tracking-wider font-semibold text-slate-400 bg-[#192232] px-1.5 py-0.5 rounded border border-[#29374c] shrink-0">Subsystem</span>
         </div>
-        <div class="max-h-12 overflow-y-auto pr-1 mt-0.5">
+        <div class="max-h-10 overflow-y-auto pr-1 mt-0.5">
           <p id="sidebarPartDesc" class="text-[11px] text-slate-300 leading-snug">
             Select or hover any component from the list or the 3D model to inspect its specifications.
           </p>
         </div>
       </div>
 
-      <!-- Exploded View Controls (Clean CAD Style) -->
-      <div class="p-3 border-t border-[#242e40] bg-[#0d121b] space-y-2 shrink-0">
+      <!-- Assembly Controls Dock (Clean, Compact CAD Style) -->
+      <div id="sidebarAssemblyDock" class="p-3 border-t border-[#242e40] bg-[#090d14] space-y-2 shrink-0">
+        <!-- Explode Slider -->
         <div class="flex items-center justify-between text-xs">
           <span class="font-medium text-slate-300 flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,11 +250,33 @@
         </div>
 
         <input id="explodeSlider" type="range" min="0" max="1" step="0.01" value="0"
-          class="w-full h-1.5 bg-[#1f2838] rounded-lg appearance-none cursor-pointer accent-blue-500" />
+          class="w-full h-1.5 bg-[#1e2738] rounded-lg appearance-none cursor-pointer accent-blue-500" />
 
+        <!-- CAD Quick Preset Buttons -->
+        <div class="grid grid-cols-4 gap-1.5">
+          <button id="preset0Btn" type="button"
+            class="px-2 py-1 rounded bg-[#131a26] hover:bg-[#1a2436] border border-[#232f42] text-[10px] font-semibold text-slate-300 hover:text-white transition-all text-center">
+            0% Fit
+          </button>
+          <button id="preset50Btn" type="button"
+            class="px-2 py-1 rounded bg-[#131a26] hover:bg-[#1a2436] border border-[#232f42] text-[10px] font-semibold text-slate-300 hover:text-white transition-all text-center">
+            50% CAD
+          </button>
+          <button id="preset100Btn" type="button"
+            class="px-2 py-1 rounded bg-[#131a26] hover:bg-[#1a2436] border border-[#232f42] text-[10px] font-semibold text-slate-300 hover:text-white transition-all text-center">
+            100% Exp
+          </button>
+          <button id="autoPlayExplodeBtn" type="button"
+            class="px-2 py-1 rounded bg-blue-600/20 hover:bg-blue-600/35 border border-blue-500/40 text-[10px] font-semibold text-blue-300 hover:text-white transition-all text-center"
+            title="Auto-cycle explosion and reassembly animation">
+            ▶ Play
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
         <div class="grid grid-cols-2 gap-2">
           <button id="toggleExplodeBtn"
-            class="px-3 py-1.5 rounded-lg bg-[#192334] hover:bg-[#202d42] border border-[#2e3d54] text-xs font-semibold text-slate-200 hover:text-white transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
+            class="px-3 py-1.5 rounded-lg bg-[#182232] hover:bg-[#202d42] border border-[#2b3a4f] text-xs font-semibold text-slate-200 hover:text-white transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
             <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -196,7 +284,7 @@
             <span id="toggleExplodeText">Explode View</span>
           </button>
           <button id="resetViewBtn"
-            class="px-3 py-1.5 rounded-lg bg-[#141b26] hover:bg-[#1c2535] border border-[#273447] text-xs font-medium text-slate-300 hover:text-white transition-all flex items-center justify-center gap-1.5 active:scale-95">
+            class="px-3 py-1.5 rounded-lg bg-[#121824] hover:bg-[#1a2332] border border-[#243042] text-xs font-medium text-slate-300 hover:text-white transition-all flex items-center justify-center gap-1.5 active:scale-95">
             <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -270,10 +358,15 @@
 
         <!-- Scrollable Inspector Body (Fixes description cutoff) -->
         <div id="inspectorScrollArea" class="flex-1 overflow-y-auto py-3 space-y-3 pr-1">
-          <!-- Full Technical Description -->
+          <!-- Full Technical Description & Depth Toggle -->
           <div>
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Functional
-              Description</span>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Functional Description</span>
+              <div class="inline-flex rounded-lg bg-[#0e1420] p-0.5 border border-[#232f42] text-[10px]" role="group" aria-label="Explanation depth">
+                <button id="depthSimpleBtn" type="button" class="px-2 py-0.5 rounded font-medium transition-all bg-blue-600 text-white shadow-sm">Simple</button>
+                <button id="depthTechnicalBtn" type="button" class="px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white transition-all">Technical</button>
+              </div>
+            </div>
             <p id="explanationText"
               class="text-xs text-slate-200 leading-relaxed bg-[#161c29] p-3 rounded-lg border border-[#232e40]">
               Component technical explanation will appear here.
@@ -362,6 +455,16 @@
           <span>X-Ray Mode</span>
         </button>
 
+        <button id="toggleCalipersBtn"
+          class="px-2.5 py-1 text-xs rounded-lg bg-[#171f2c] hover:bg-[#202b3d] border border-[#29364a] text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
+          title="Toggle 3D Dimensional Calipers & Bounding Box (C)">
+          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 7v10m16-10v10M7 12h10m-10 0l2-2m-2 2l2 2m8-2l-2-2m2 2l-2 2" />
+          </svg>
+          <span id="calipersBtnText">Calipers (3D)</span>
+        </button>
+
         <button id="cycleLightingBtn"
           class="px-2.5 py-1 text-xs rounded-lg bg-[#171f2c] hover:bg-[#202b3d] border border-[#29364a] text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
           title="Cycle Studio Lighting Mode (L)">
@@ -370,6 +473,20 @@
               d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
           <span id="lightingPresetText">Studio Clean</span>
+        </button>
+
+        <button id="toggleAudioBtn"
+          class="px-2.5 py-1 text-xs rounded-lg bg-[#171f2c] hover:bg-[#202b3d] border border-[#29364a] text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
+          title="Toggle Tactile Audio Clicks">
+          <svg id="audioIconOn" class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <svg id="audioIconOff" class="w-3.5 h-3.5 text-slate-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
+          <span>Audio</span>
         </button>
 
         <div class="h-4 w-px bg-[#263346] mx-1 hidden sm:block"></div>
@@ -610,8 +727,229 @@
     </div>
   </div>
 
+  <!-- First-Visit Onboarding Guide Modal -->
+  <div id="onboardingModal"
+    class="fixed inset-0 bg-[#090d14]/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 hidden">
+    <div
+      class="bg-[#10151f] border border-[#29364b] rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Guide Header -->
+      <div class="px-5 py-3.5 border-b border-[#242e40] flex items-center justify-between bg-[#131924]">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-white text-xs sm:text-sm">Interactive Visualizer Guide</h3>
+            <span class="text-[11px] text-slate-400">Quick Guide & Interactive Controls</span>
+          </div>
+        </div>
+        <button id="closeOnboardingBtn"
+          class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#1e2736] transition-colors"
+          title="Close guide">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Guide Content Area -->
+      <div class="p-5 overflow-y-auto flex-1 text-slate-300 space-y-3.5 text-xs sm:text-sm">
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Welcome to the 3D Interactive Mechanical & Engineering Visualizer. Here is how to navigate and explore complex assemblies:
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div class="p-3 rounded-xl bg-[#141a26] border border-[#222c3d] flex items-start gap-2.5">
+            <span class="text-lg">📂</span>
+            <div>
+              <div class="font-semibold text-white text-xs">Search & Browse</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Filter models across Consumer Tech, Automotive, Architecture, Science & Lab.</div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#141a26] border border-[#222c3d] flex items-start gap-2.5">
+            <span class="text-lg">🔄</span>
+            <div>
+              <div class="font-semibold text-white text-xs">Drag to Rotate</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Left-click and drag in 3D to orbit. Right-click to pan. Scroll wheel to zoom in/out.</div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#141a26] border border-[#222c3d] flex items-start gap-2.5">
+            <span class="text-lg">💥</span>
+            <div>
+              <div class="font-semibold text-white text-xs">Explode & Reassemble</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Click "Explode" or drag the slider for step-by-step mechanical breakdowns.</div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#141a26] border border-[#222c3d] flex items-start gap-2.5">
+            <span class="text-lg">🔍</span>
+            <div>
+              <div class="font-semibold text-white text-xs">Hover for Explanation</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Hover or click any component to reveal full functional descriptions and metrics.</div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#141a26] border border-[#222c3d] flex items-start gap-2.5">
+            <span class="text-lg">⚡</span>
+            <div>
+              <div class="font-semibold text-white text-xs">Simple / Technical Depth</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Toggle explanation depth between beginner plain language and engineering terminology.</div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#141a26] border border-[#222c3d] flex items-start gap-2.5">
+            <span class="text-lg">📝</span>
+            <div>
+              <div class="font-semibold text-white text-xs">Test Yourself (Quiz)</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Take the component identification quiz to test your mechanical mastery.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300 flex items-center gap-2">
+          <span>💡</span>
+          <span>You can reopen this guide at any time by clicking the <strong>Help (?)</strong> button in the top bar.</span>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-5 py-3 border-t border-[#242e40] bg-[#131924] flex items-center justify-end">
+        <button id="dismissOnboardingBtn"
+          class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-1.5">
+          <span>Got it</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Mini Chatbox Floating Launcher Button -->
+  <button id="chatboxToggleBtn"
+    class="fixed bottom-5 right-5 z-40 px-3.5 py-2.5 rounded-full bg-[#111722]/95 hover:bg-[#18202e] border border-[#2b394e] text-slate-200 shadow-2xl flex items-center gap-2.5 transition-all text-xs font-medium cursor-pointer group focus:outline-none"
+    title="Open Component Q&A Chat">
+    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+    <svg class="w-4 h-4 text-blue-400 group-hover:text-blue-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+    <span class="font-medium text-white">Component Q&amp;A</span>
+    <span id="chatboxUnreadBadge" class="hidden px-1.5 py-0.2 bg-blue-600 text-[10px] text-white rounded-full font-bold">1</span>
+  </button>
+
+  <!-- Mini Chatbox Panel (Professional Neutral CAD/Hardware Theme) -->
+  <div id="chatboxPanel"
+    class="fixed bottom-5 right-5 z-40 w-80 sm:w-96 h-[510px] max-h-[82vh] flex flex-col bg-[#10151f] border border-[#263346] rounded-2xl shadow-2xl overflow-hidden hidden transition-all animate-in fade-in zoom-in-95 duration-200">
+    
+    <!-- Chat Header (Clean & Professional) -->
+    <div class="px-4 py-3 bg-[#131924] border-b border-[#242e40] flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-[#1a2332] border border-[#2d3a4e] flex items-center justify-center text-blue-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h4 class="font-semibold text-white text-xs sm:text-sm">Component Assistant</h4>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" title="AI Ready"></span>
+          </div>
+          <span class="text-[10px] text-slate-400">Technical Doubts &amp; Q&amp;A</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1">
+        <button id="chatClearBtn"
+          class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-[#1c2432] transition-colors"
+          title="Clear conversation history">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+        <button id="chatMinimizeBtn"
+          class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1c2432] transition-colors"
+          title="Minimize chatbox">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active 3D Context Strip -->
+    <div class="px-3.5 py-1.5 bg-[#0e131b] border-b border-[#1f2939] text-[10px] text-slate-400 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-1.5 truncate">
+        <span class="text-slate-500">Context:</span>
+        <span id="chatActiveContextModel" class="font-medium text-slate-200 truncate">Computer</span>
+        <span id="chatActiveContextPart" class="text-blue-400 truncate"></span>
+      </div>
+      <span class="text-[9px] font-mono text-slate-500 uppercase">Live 3D Sync</span>
+    </div>
+
+    <!-- Scrollable Messages Container -->
+    <div id="chatMessages" class="flex-1 overflow-y-auto p-3.5 space-y-3 text-xs leading-relaxed">
+      <!-- Default Greeting Message -->
+      <div class="flex gap-2.5 mr-auto max-w-[95%]">
+        <div class="w-6 h-6 rounded-md bg-[#1a2332] border border-[#2d3a4e] flex items-center justify-center text-blue-400 shrink-0 text-[10px] font-mono font-bold mt-0.5">
+          AI
+        </div>
+        <div class="space-y-2">
+          <div class="bg-[#141b26] border border-[#222d3e] text-slate-200 rounded-xl rounded-tl-none p-3 shadow-sm space-y-1.5">
+            <p>Welcome! Ask any doubts or questions regarding the components, engineering principles, materials, or assembly functions of this 3D model.</p>
+          </div>
+          <!-- Quick Question Suggestions Chips -->
+          <div id="chatStarterChips" class="flex flex-wrap gap-1.5 pt-1">
+            <button type="button" class="chat-chip px-2.5 py-1 rounded-lg bg-[#141b26] hover:bg-[#1c2534] border border-[#232f42] text-[11px] text-slate-300 hover:text-white transition-colors text-left">
+              What does this component do?
+            </button>
+            <button type="button" class="chat-chip px-2.5 py-1 rounded-lg bg-[#141b26] hover:bg-[#1c2534] border border-[#232f42] text-[11px] text-slate-300 hover:text-white transition-colors text-left">
+              What materials are used?
+            </button>
+            <button type="button" class="chat-chip px-2.5 py-1 rounded-lg bg-[#141b26] hover:bg-[#1c2534] border border-[#232f42] text-[11px] text-slate-300 hover:text-white transition-colors text-left">
+              How does the whole assembly operate?
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing Indicator (hidden by default) -->
+    <div id="chatTypingIndicator" class="hidden px-4 py-2 bg-[#0e131b] border-t border-[#1d2737] flex items-center gap-2 text-[11px] text-slate-400">
+      <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse [animation-delay:0.2s]"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse [animation-delay:0.4s]"></span>
+      <span class="text-[10px] text-slate-400 font-mono ml-1">Analyzing component query...</span>
+    </div>
+
+    <!-- Chat Input Area -->
+    <form id="chatForm" class="p-2.5 bg-[#131924] border-t border-[#242e40] shrink-0 flex items-center gap-2">
+      <input id="chatInput" type="text" autocomplete="off"
+        placeholder="Ask a doubt about parts or assemblies..."
+        class="flex-1 bg-[#0b0e14] text-slate-200 placeholder-slate-500 text-xs px-3.5 py-2.5 rounded-xl border border-[#243044] focus:outline-none focus:border-blue-500 transition-colors">
+      <button id="chatSendBtn" type="submit"
+        class="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md hover:shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+        title="Send Question">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+      </button>
+    </form>
+  </div>
+
   <!-- Modular Application Scripts -->
   <script src="materials.js"></script>
+  <script src="components.js"></script>
   <script src="quiz.js"></script>
   <script src="app.js"></script>
 </body>

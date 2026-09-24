@@ -7,13 +7,15 @@
 
 const OBJECTS = {
   computer: {
-    label: 'Computer',
+    label: 'Computer Workstation',
+    category: 'Electronics',
+    icon: '💻',
     viewRadius: 6.5,
     explodeDistance: 1.4,
     parts: [
       {
         id: 'case',
-        name: 'Case',
+        name: 'Case Chassis & Glass',
         color: 0x2b323f,
         geometry: { type: 'box', args: [2.2, 2.6, 2.2] },
         position: [0, 0.2, 0],
@@ -90,7 +92,9 @@ const OBJECTS = {
   },
 
   atom: {
-    label: 'Atom (simplified model)',
+    label: 'Quantum Atom',
+    category: 'Science',
+    icon: '⚛️',
     viewRadius: 4.5,
     explodeDistance: 1.1,
     parts: [
@@ -131,6 +135,8 @@ const OBJECTS = {
 
   'solar-system': {
     label: 'Solar System',
+    category: 'Science',
+    icon: '🪐',
     viewRadius: 22,
     explodeDistance: 4.5,
     parts: [
@@ -149,7 +155,9 @@ const OBJECTS = {
   },
 
   tv: {
-    label: 'Television (TV)',
+    label: 'Smart Television (OLED TV)',
+    category: 'Electronics',
+    icon: '📺',
     viewRadius: 6,
     explodeDistance: 1.3,
     parts: [
@@ -197,7 +205,9 @@ const OBJECTS = {
   },
 
   'mobile-phone': {
-    label: 'Mobile Phone',
+    label: 'Flagship Smartphone',
+    category: 'Electronics',
+    icon: '📱',
     viewRadius: 4,
     explodeDistance: 0.9,
     parts: [
@@ -248,7 +258,9 @@ const OBJECTS = {
   },
 
   refrigerator: {
-    label: 'Refrigerator',
+    label: 'Modern Refrigerator',
+    category: 'Appliances',
+    icon: '🧊',
     viewRadius: 6.5,
     explodeDistance: 1.3,
     parts: [
@@ -307,7 +319,9 @@ const OBJECTS = {
   },
 
   car: {
-    label: 'Car (simplified)',
+    label: 'Automobile Powertrain',
+    category: 'Vehicles',
+    icon: '🚗',
     viewRadius: 7,
     explodeDistance: 1.5,
     parts: [
@@ -387,7 +401,9 @@ const OBJECTS = {
   },
 
   bicycle: {
-    label: 'Bicycle',
+    label: 'Road Bicycle',
+    category: 'Vehicles',
+    icon: '🚲',
     viewRadius: 18,
     explodeDistance: 6,
     parts: [
@@ -457,7 +473,9 @@ const OBJECTS = {
   },
 
   laptop: {
-    label: 'Laptop',
+    label: 'Precision Laptop',
+    category: 'Electronics',
+    icon: '💻',
     viewRadius: 12,
     explodeDistance: 4,
     parts: [
@@ -515,7 +533,9 @@ const OBJECTS = {
   },
 
   'washing-machine': {
-    label: 'Washing Machine',
+    label: 'Front-Load Washer',
+    category: 'Appliances',
+    icon: '🌀',
     viewRadius: 14,
     explodeDistance: 5,
     parts: [
@@ -568,7 +588,9 @@ const OBJECTS = {
   },
 
   'air-conditioner': {
-    label: 'Split Air Conditioner',
+    label: 'Inverter Air Conditioner',
+    category: 'Appliances',
+    icon: '❄️',
     viewRadius: 16,
     explodeDistance: 5.5,
     parts: [
