@@ -440,7 +440,7 @@ const OBJECTS = {
         color: 0x94a3b8,
         geometry: { type: 'cylinder', args: [0.15, 0.15, 3.5, 16] },
         position: [3.2, 4.8, 0],
-        rotation: [0, 0, Math.PI / 2],
+        rotation: [Math.PI / 2, 0, 0],
         description: 'Steering interface gripped by the cyclist, housing the brake levers and gear shifters for navigation.'
       },
       {
@@ -626,6 +626,236 @@ const OBJECTS = {
         position: [0.8, -2.2, 1.1],
         rotation: [Math.PI / 2, 0, 0],
         description: 'Heavy-duty axial propeller fan expelling rejected thermal heat outdoors across the condenser fins.'
+      },
+    ],
+  },
+
+  airplane: {
+    label: 'Commercial Airplane',
+    category: 'Vehicles',
+    icon: '✈️',
+    viewRadius: 18,
+    explodeDistance: 5.5,
+    parts: [
+      {
+        id: 'fuselage',
+        name: 'Fuselage',
+        color: 0xe2e8f0,
+        geometry: { type: 'cylinder', args: [0.9, 0.9, 11.0, 32] },
+        position: [0, 0, 0],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'The primary aerodynamic cylindrical body housing the pressurized passenger cabin, cargo hold, and critical flight systems.'
+      },
+      {
+        id: 'wings',
+        name: 'Main Wings',
+        color: 0x94a3b8,
+        geometry: { type: 'box', args: [12.0, 0.18, 2.4] },
+        position: [0, -0.2, 0.2],
+        description: 'High-lift aerodynamic airfoils engineered with internal fuel tanks, flaps, and slats to generate vertical lift during flight.'
+      },
+      {
+        id: 'tail-fin',
+        name: 'Vertical Tail Fin',
+        color: 0x38bdf8,
+        geometry: { type: 'box', args: [0.18, 2.6, 2.0] },
+        position: [0, 1.8, -4.6],
+        description: 'The vertical stabilizer equipped with the rudder to provide directional yaw stability and navigational heading control.'
+      },
+      {
+        id: 'engine-left',
+        name: 'Port Turbofan Engine',
+        color: 0x334155,
+        geometry: { type: 'cylinder', args: [0.55, 0.55, 2.2, 24] },
+        position: [-3.2, -0.9, 0.4],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'High-bypass turbofan jet engine mounted on the left wing compressing intake air to produce massive forward propulsion thrust.'
+      },
+      {
+        id: 'engine-right',
+        name: 'Starboard Turbofan Engine',
+        color: 0x334155,
+        geometry: { type: 'cylinder', args: [0.55, 0.55, 2.2, 24] },
+        position: [3.2, -0.9, 0.4],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'High-bypass turbofan jet engine mounted on the right wing delivering balanced thrust and auxiliary electrical power.'
+      },
+      {
+        id: 'landing-gear',
+        name: 'Landing Gear',
+        color: 0x1e293b,
+        geometry: { type: 'box', args: [2.2, 1.0, 0.8] },
+        position: [0, -1.3, -0.5],
+        description: 'Retractable undercarriage with hydraulic oleo shock struts and heavy-duty rubber wheels designed for runway takeoff and landing.'
+      },
+      {
+        id: 'cockpit',
+        name: 'Flight Deck Cockpit',
+        color: 0x0284c7,
+        geometry: { type: 'sphere', args: [0.88, 24, 24] },
+        position: [0, 0.35, 5.0],
+        transparent: true,
+        opacity: 0.75,
+        description: 'The forward flight deck containing pilot avionics, navigation multi-function displays, and fly-by-wire controls.'
+      },
+    ],
+  },
+
+  smartwatch: {
+    label: 'Smartwatch',
+    category: 'High-End Devices',
+    icon: '⌚',
+    viewRadius: 5.5,
+    explodeDistance: 1.3,
+    parts: [
+      {
+        id: 'case',
+        name: 'Watch Case',
+        color: 0x334155,
+        geometry: { type: 'box', args: [1.8, 2.2, 0.45] },
+        position: [0, 0, 0],
+        description: 'Aerospace-grade titanium or aluminum enclosure providing water resistance, structural durability, and component shielding.'
+      },
+      {
+        id: 'display',
+        name: 'Display Screen',
+        color: 0x0f172a,
+        geometry: { type: 'box', args: [1.55, 1.95, 0.05] },
+        position: [0, 0, 0.25],
+        description: 'High-brightness OLED capacitive touchscreen protected by scratch-resistant sapphire crystal glass.'
+      },
+      {
+        id: 'crown',
+        name: 'Digital Crown',
+        color: 0xf5a623,
+        geometry: { type: 'cylinder', args: [0.22, 0.22, 0.28, 20] },
+        position: [0.98, 0.45, 0],
+        rotation: [0, 0, Math.PI / 2],
+        description: 'Precision rotary dial button with haptic feedback used for smooth scrolling, zooming, and interface navigation.'
+      },
+      {
+        id: 'strap',
+        name: 'Watch Strap',
+        color: 0x1e293b,
+        geometry: { type: 'box', args: [1.4, 4.4, 0.16] },
+        position: [0, 0, -0.15],
+        description: 'Flexible fluoroelastomer sports band engineered for ergonomic wrist comfort, secure fastening, and daily durability.'
+      },
+      {
+        id: 'battery',
+        name: 'Lithium Battery',
+        color: 0x475569,
+        geometry: { type: 'box', args: [1.3, 1.4, 0.12] },
+        position: [0, -0.1, -0.05],
+        description: 'Custom-shaped miniature lithium-polymer rechargeable cell delivering steady all-day power for processing and wireless radios.'
+      },
+      {
+        id: 'sensor',
+        name: 'Heart-Rate Sensor',
+        color: 0x22c55e,
+        geometry: { type: 'cylinder', args: [0.55, 0.55, 0.08, 24] },
+        position: [0, 0, -0.26],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'Optical bio-sensor cluster utilizing green and infrared LEDs with photodiodes to measure heart rate and blood oxygenation.'
+      },
+    ],
+  },
+
+  'printer-3d': {
+    label: '3D Printer',
+    category: 'High-End Devices',
+    icon: '🖨️',
+    viewRadius: 12.0,
+    explodeDistance: 3.5,
+    parts: [
+      {
+        id: 'frame',
+        name: 'Structural Frame',
+        color: 0x334155,
+        geometry: { type: 'box', args: [3.8, 4.2, 3.6] },
+        position: [0, 1.8, 0],
+        transparent: true,
+        opacity: 0.18,
+        description: 'Rigid aluminum extrusion gantry providing extreme torsional stability and mounting rails for orthogonal axes.'
+      },
+      {
+        id: 'bed',
+        name: 'Print Bed',
+        color: 0xf5a623,
+        geometry: { type: 'box', args: [2.8, 0.15, 2.8] },
+        position: [0, 0.2, 0],
+        description: 'Heated aluminum platform topped with textured spring-steel PEI sheet to optimize first-layer adhesion and prevent warping.'
+      },
+      {
+        id: 'extruder',
+        name: 'Extruder & Nozzle',
+        color: 0x38bdf8,
+        geometry: { type: 'box', args: [0.7, 0.8, 0.7] },
+        position: [0, 1.6, 0],
+        description: 'Direct-drive printhead assembly containing filament feeder gears, thermal heatsink, heater block, and brass extrusion nozzle.'
+      },
+      {
+        id: 'spool',
+        name: 'Filament Spool',
+        color: 0xef4444,
+        geometry: { type: 'cylinder', args: [1.1, 1.1, 0.6, 24] },
+        position: [1.8, 3.8, 0],
+        rotation: [0, 0, Math.PI / 2],
+        description: 'Top-mounted 1kg reel of 1.75mm thermoplastic printing filament smoothly feeding material into the extruder toolhead.'
+      },
+      {
+        id: 'steppers',
+        name: 'Stepper Motors',
+        color: 0x1e293b,
+        geometry: { type: 'box', args: [0.8, 0.8, 0.8] },
+        position: [-1.8, 0.3, -1.6],
+        description: 'Precision brushless stepper motors driving reinforced timing belts and lead screws for sub-millimeter positioning accuracy.'
+      },
+    ],
+  },
+
+  'mri-machine': {
+    label: 'MRI Machine',
+    category: 'Medical Devices',
+    icon: '🧲',
+    viewRadius: 14.0,
+    explodeDistance: 4.0,
+    parts: [
+      {
+        id: 'gantry',
+        name: 'Main Magnet Bore & Gantry',
+        color: 0xf8fafc,
+        geometry: { type: 'cylinder', args: [2.6, 2.6, 3.2, 32] },
+        position: [0, 2.2, -0.6],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'Superconducting cylindrical cryostat containing liquid helium coils that generate a homogeneous 3.0 Tesla magnetic field.'
+      },
+      {
+        id: 'gradient-coils',
+        name: 'Gradient Coils',
+        color: 0x38bdf8,
+        geometry: { type: 'cylinder', args: [1.4, 1.4, 2.9, 28] },
+        position: [0, 2.2, -0.6],
+        rotation: [Math.PI / 2, 0, 0],
+        transparent: true,
+        opacity: 0.35,
+        description: 'Fast-switching electromagnetic coils modulating the magnetic field along X, Y, and Z axes for spatial imaging slice encoding.'
+      },
+      {
+        id: 'patient-table',
+        name: 'Patient Table',
+        color: 0x94a3b8,
+        geometry: { type: 'box', args: [1.2, 0.4, 5.2] },
+        position: [0, 1.1, 1.2],
+        description: 'Motorized non-magnetic carbon-fiber bed with hydraulic height and longitudinal drive positioning the patient inside the bore.'
+      },
+      {
+        id: 'control-console',
+        name: 'Control Console',
+        color: 0x1e293b,
+        geometry: { type: 'box', args: [1.6, 1.4, 0.8] },
+        position: [3.2, 1.0, 2.2],
+        description: 'Diagnostic workstation outside the RF shielded scan room where technicians configure scan protocols and reconstruct 3D slice data.'
       },
     ],
   },

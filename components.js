@@ -190,6 +190,67 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
   }
 
   // ---------------------------------------------------------------------------
+  // 11. AIRPLANE
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'airplane') {
+    if (partId.includes('engine')) {
+      handled = true;
+      group = buildRealisticAirplaneEngine(part, baseMaterial);
+    } else if (partId === 'cockpit') {
+      handled = true;
+      group = buildRealisticAirplaneCockpit(part, baseMaterial);
+    } else if (partId === 'landing-gear') {
+      handled = true;
+      group = buildRealisticAirplaneLandingGear(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 12. SMARTWATCH
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'smartwatch') {
+    if (partId === 'display') {
+      handled = true;
+      group = buildRealisticSmartwatchDisplay(part, baseMaterial);
+    } else if (partId === 'crown') {
+      handled = true;
+      group = buildRealisticSmartwatchCrown(part, baseMaterial);
+    } else if (partId === 'sensor') {
+      handled = true;
+      group = buildRealisticSmartwatchSensor(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 13. 3D PRINTER
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'printer-3d') {
+    if (partId === 'extruder') {
+      handled = true;
+      group = buildRealistic3DPrinterExtruder(part, baseMaterial);
+    } else if (partId === 'bed') {
+      handled = true;
+      group = buildRealistic3DPrinterBed(part, baseMaterial);
+    } else if (partId === 'spool') {
+      handled = true;
+      group = buildRealistic3DPrinterSpool(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 14. MRI MACHINE
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'mri-machine') {
+    if (partId === 'gantry') {
+      handled = true;
+      group = buildRealisticMRIGantry(part, baseMaterial);
+    } else if (partId === 'control-console') {
+      handled = true;
+      group = buildRealisticMRIConsole(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // FALLBACK: Enhanced beveled mesh with engineering chamfers & fasteners
   // ---------------------------------------------------------------------------
   if (!handled) {
@@ -1391,31 +1452,33 @@ function buildRealisticCarCabin(part, baseMaterial) {
 function buildRealisticBikeWheel(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Outer Rubber Tire
+  // Outer Rubber Tire (in XZ plane so group.rotation.x = Math.PI/2 rotates it upright to vertical XY plane)
   const tireGeom = new THREE.TorusGeometry(2.1, 0.18, 16, 48);
+  tireGeom.rotateX(Math.PI / 2);
   const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
   const tire = new THREE.Mesh(tireGeom, tireMat);
+  tire.castShadow = true;
   group.add(tire);
 
-  // Double-Walled Aluminum Rim
+  // Double-Walled Aluminum Rim (in XZ plane)
   const rimGeom = new THREE.TorusGeometry(1.95, 0.06, 12, 48);
+  rimGeom.rotateX(Math.PI / 2);
   const rimMat = getHardwareMat(0x64748b, 0.2, 0.85);
   const rim = new THREE.Mesh(rimGeom, rimMat);
   group.add(rim);
 
-  // Central Hub with Axle
+  // Central Hub with Axle (cylinder height along Y unrotated, matching cylinder primitive)
   const hubGeom = new THREE.CylinderGeometry(0.25, 0.25, 0.45, 16);
   const hub = new THREE.Mesh(hubGeom, rimMat);
-  hub.rotation.x = Math.PI / 2;
   group.add(hub);
 
-  // 24 Wire Spokes (Tensioned interlaced pattern)
+  // 24 Wire Spokes (Tensioned interlaced pattern in XZ plane)
   const spokeMat = new THREE.LineBasicMaterial({ color: 0xd1d5db });
   for (let s = 0; s < 24; s++) {
     const angle = (s / 24) * Math.PI * 2;
     const pts = [
-      new THREE.Vector3(0, 0, (s % 2 === 0 ? 0.15 : -0.15)),
-      new THREE.Vector3(Math.cos(angle) * 1.95, Math.sin(angle) * 1.95, 0),
+      new THREE.Vector3(0, (s % 2 === 0 ? 0.15 : -0.15), 0),
+      new THREE.Vector3(Math.cos(angle) * 1.95, 0, Math.sin(angle) * 1.95),
     ];
     const sGeom = new THREE.BufferGeometry().setFromPoints(pts);
     const spoke = new THREE.Line(sGeom, spokeMat);
@@ -1440,18 +1503,18 @@ function buildRealisticBikeFrame(part, baseMaterial) {
 function buildRealisticBikePedals(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Crank Arm
-  const armGeom = new THREE.BoxGeometry(0.12, 1.2, 0.08);
+  // Crank Arm (length along Z unrotated so group.rotation.x = Math.PI/2 brings it into vertical XY plane)
+  const armGeom = new THREE.BoxGeometry(0.12, 0.08, 1.2);
   const armMat = getHardwareMat(0x334155, 0.3, 0.8);
   const arm = new THREE.Mesh(armGeom, armMat);
   group.add(arm);
 
-  // Platform Pedals with Grip Pins
+  // Platform Pedals with Grip Pins (offsets along Y and Z so group.rotation.x = Math.PI/2 positions them left & right)
   for (let p of [-0.6, 0.6]) {
-    const pedGeom = new THREE.BoxGeometry(0.4, 0.08, 0.28);
+    const pedGeom = new THREE.BoxGeometry(0.4, 0.28, 0.08);
     const pedMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
     const ped = new THREE.Mesh(pedGeom, pedMat);
-    ped.position.set(0, p, p > 0 ? 0.25 : -0.25);
+    ped.position.set(0, p > 0 ? 0.25 : -0.25, p);
     group.add(ped);
   }
 
@@ -1666,6 +1729,422 @@ function buildRealisticACFan(part, baseMaterial) {
   // Smooth outdoor fan spin
   COMPONENT_ANIMATORS.push((delta) => {
     group.rotation.z += delta * 10.0;
+  });
+
+  return group;
+}
+
+// -----------------------------------------------------------------------------
+// 15. AIRPLANE PROCEDURAL COMPONENTS
+// -----------------------------------------------------------------------------
+function buildRealisticAirplaneEngine(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Engine Cowling / Nacelle Outer Shell
+  const nacelleGeom = new THREE.CylinderGeometry(0.58, 0.52, 2.2, 28);
+  const nacelleMat = getHardwareMat(0x475569, 0.35, 0.8);
+  const nacelle = new THREE.Mesh(nacelleGeom, nacelleMat);
+  group.add(nacelle);
+
+  // Chrome Air Intake Lip Ring
+  const lipGeom = new THREE.TorusGeometry(0.55, 0.05, 12, 32);
+  const lipMat = getHardwareMat(0xe2e8f0, 0.15, 0.95);
+  const lip = new THREE.Mesh(lipGeom, lipMat);
+  lip.position.y = 1.1;
+  lip.rotation.x = Math.PI / 2;
+  group.add(lip);
+
+  // Turbofan Spinner Cone
+  const coneGeom = new THREE.ConeGeometry(0.18, 0.45, 20);
+  const coneMat = getHardwareMat(0x1e293b, 0.2, 0.85);
+  const cone = new THREE.Mesh(coneGeom, coneMat);
+  cone.position.y = 0.9;
+  group.add(cone);
+
+  // 14 Titanium Fan Blades Group (Spinning in flight)
+  const fanGroup = new THREE.Group();
+  fanGroup.position.y = 0.85;
+  const bladeMat = getHardwareMat(0x94a3b8, 0.25, 0.9);
+  for (let b = 0; b < 14; b++) {
+    const angle = (b / 14) * Math.PI * 2;
+    const bladeGeom = new THREE.BoxGeometry(0.04, 0.36, 0.08);
+    const blade = new THREE.Mesh(bladeGeom, bladeMat);
+    blade.position.set(Math.cos(angle) * 0.28, 0, Math.sin(angle) * 0.28);
+    blade.rotation.y = -angle;
+    blade.rotation.z = 0.35;
+    fanGroup.add(blade);
+  }
+  group.add(fanGroup);
+
+  COMPONENT_ANIMATORS.push((delta) => {
+    fanGroup.rotation.y += delta * 15.0;
+  });
+
+  return group;
+}
+
+function buildRealisticAirplaneCockpit(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Streamlined Nose & Flight Deck Canopy
+  const domeGeom = new THREE.SphereGeometry(0.88, 28, 28);
+  const dome = new THREE.Mesh(domeGeom, baseMaterial);
+  dome.scale.set(1.0, 0.85, 1.3);
+  group.add(dome);
+
+  // Windshield Window Frame Grid (Flight Deck Glass)
+  const glassGeom = new THREE.SphereGeometry(0.89, 20, 20, 0, Math.PI, 0, Math.PI * 0.5);
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0x0284c7,
+    roughness: 0.1,
+    metalness: 0.1,
+    transmission: 0.85,
+    transparent: true,
+    opacity: 0.75,
+    clearcoat: 1.0,
+  });
+  const glass = new THREE.Mesh(glassGeom, glassMat);
+  glass.scale.set(0.95, 0.8, 1.15);
+  glass.position.set(0, 0.15, 0.2);
+  group.add(glass);
+
+  return group;
+}
+
+function buildRealisticAirplaneLandingGear(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Dual Rubber Pneumatic Runway Tires
+  const tireGeom = new THREE.CylinderGeometry(0.42, 0.42, 0.28, 24);
+  const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+  const hubMat = getHardwareMat(0xe2e8f0, 0.2, 0.85);
+
+  [-0.65, 0.65].forEach((x) => {
+    const tire = new THREE.Mesh(tireGeom, tireMat);
+    tire.rotation.z = Math.PI / 2;
+    tire.position.set(x, -0.25, 0);
+    group.add(tire);
+
+    const hubGeom = new THREE.CylinderGeometry(0.24, 0.24, 0.29, 20);
+    const hub = new THREE.Mesh(hubGeom, hubMat);
+    hub.rotation.z = Math.PI / 2;
+    hub.position.set(x, -0.25, 0);
+    group.add(hub);
+  });
+
+  // Heavy-Duty Hydraulic Oleo Strut
+  const strutGeom = new THREE.CylinderGeometry(0.12, 0.12, 1.1, 16);
+  const strutMat = getHardwareMat(0x64748b, 0.2, 0.9);
+  const strut = new THREE.Mesh(strutGeom, strutMat);
+  strut.position.set(0, 0.35, 0);
+  group.add(strut);
+
+  return group;
+}
+
+// -----------------------------------------------------------------------------
+// 16. SMARTWATCH PROCEDURAL COMPONENTS
+// -----------------------------------------------------------------------------
+function buildRealisticSmartwatchDisplay(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // OLED Screen Glass with UI Texture
+  const screenGeom = new THREE.BoxGeometry(1.55, 1.95, 0.05);
+  const uiTexture = makeCanvasTexture((ctx, sz) => {
+    ctx.fillStyle = '#0a0e17';
+    ctx.fillRect(0, 0, sz, sz);
+
+    // Digital Time Readout
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 110px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('10:09', sz / 2, sz * 0.38);
+
+    // Activity Rings (Move, Exercise, Stand)
+    const cx = sz / 2, cy = sz * 0.65;
+    const rings = [
+      { r: 90, color: '#ef4444', pct: 0.82 },
+      { r: 68, color: '#22c55e', pct: 0.65 },
+      { r: 46, color: '#38bdf8', pct: 0.90 },
+    ];
+    rings.forEach((ring) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 14;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, ring.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ring.pct);
+      ctx.strokeStyle = ring.color;
+      ctx.lineWidth = 14;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    });
+
+    // Heart rate & Battery info
+    ctx.fillStyle = '#ef4444';
+    ctx.font = '600 32px sans-serif';
+    ctx.fillText('♥ 72 BPM', sz * 0.3, sz * 0.92);
+
+    ctx.fillStyle = '#22c55e';
+    ctx.fillText('⚡ 94%', sz * 0.72, sz * 0.92);
+  }, 512);
+
+  const screenMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map: uiTexture,
+    roughness: 0.15,
+    metalness: 0.05,
+    emissive: 0x223344,
+    emissiveIntensity: 0.35,
+  });
+  const screen = new THREE.Mesh(screenGeom, screenMat);
+  group.add(screen);
+
+  // Bezel Border
+  const bezelGeom = new THREE.BoxGeometry(1.58, 1.98, 0.04);
+  const wireGeom = new THREE.EdgesGeometry(bezelGeom);
+  const bezelMat = new THREE.LineBasicMaterial({ color: 0x475569 });
+  const bezel = new THREE.LineSegments(wireGeom, bezelMat);
+  group.add(bezel);
+
+  return group;
+}
+
+function buildRealisticSmartwatchCrown(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Knurled Digital Crown
+  const crownGeom = new THREE.CylinderGeometry(0.22, 0.22, 0.26, 24);
+  const crownMat = getHardwareMat(0xd4d4d8, 0.25, 0.85);
+  const crown = new THREE.Mesh(crownGeom, crownMat);
+  crown.rotation.z = Math.PI / 2;
+  group.add(crown);
+
+  // Signature Accent Ring (International Orange)
+  const ringGeom = new THREE.TorusGeometry(0.225, 0.02, 12, 24);
+  const ringMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
+  const ring = new THREE.Mesh(ringGeom, ringMat);
+  ring.rotation.y = Math.PI / 2;
+  ring.position.x = 0.05;
+  group.add(ring);
+
+  return group;
+}
+
+function buildRealisticSmartwatchSensor(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Zirconia Ceramic Sensor Backing Disc
+  const discGeom = new THREE.CylinderGeometry(0.55, 0.55, 0.08, 28);
+  const discMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.2, metalness: 0.1 });
+  const disc = new THREE.Mesh(discGeom, discMat);
+  disc.rotation.x = Math.PI / 2;
+  group.add(disc);
+
+  // 4 Green Optical LED Emitter / Photodiode Lenses
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI * 2;
+    const lensGeom = new THREE.SphereGeometry(0.08, 16, 16);
+    const lensMat = new THREE.MeshStandardMaterial({
+      color: 0x22c55e,
+      emissive: 0x22c55e,
+      emissiveIntensity: 0.8,
+      roughness: 0.1,
+    });
+    const lens = new THREE.Mesh(lensGeom, lensMat);
+    lens.position.set(Math.cos(angle) * 0.26, Math.sin(angle) * 0.26, 0.04);
+    group.add(lens);
+  }
+
+  return group;
+}
+
+// -----------------------------------------------------------------------------
+// 17. 3D PRINTER PROCEDURAL COMPONENTS
+// -----------------------------------------------------------------------------
+function buildRealistic3DPrinterExtruder(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Anodized Aluminum Toolhead Housing
+  const bodyGeom = new THREE.BoxGeometry(0.68, 0.75, 0.68);
+  const bodyMat = getHardwareMat(0x0284c7, 0.25, 0.8);
+  const body = new THREE.Mesh(bodyGeom, bodyMat);
+  group.add(body);
+
+  // Front Radial Part Cooling Blower Fan
+  const fanGeom = new THREE.CylinderGeometry(0.18, 0.18, 0.08, 20);
+  const fanMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+  const fan = new THREE.Mesh(fanGeom, fanMat);
+  fan.rotation.x = Math.PI / 2;
+  fan.position.set(0, 0.05, 0.36);
+  group.add(fan);
+
+  // Brass 0.4mm Hotend Nozzle Tip
+  const nozzleGeom = new THREE.ConeGeometry(0.08, 0.22, 16);
+  const nozzleMat = getHardwareMat(0xf59e0b, 0.2, 0.9);
+  const nozzle = new THREE.Mesh(nozzleGeom, nozzleMat);
+  nozzle.rotation.x = Math.PI;
+  nozzle.position.set(0, -0.48, 0);
+  group.add(nozzle);
+
+  return group;
+}
+
+function buildRealistic3DPrinterBed(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Textured Gold PEI Spring Steel Sheet with Grid Texture
+  const bedTexture = makeCanvasTexture((ctx, sz) => {
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(0, 0, sz, sz);
+
+    // Precision Measurement Grid Lines
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 1;
+    const step = sz / 10;
+    for (let i = 0; i <= sz; i += step) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, sz);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(sz, i);
+      ctx.stroke();
+    }
+  }, 256);
+
+  const bedGeom = new THREE.BoxGeometry(2.8, 0.12, 2.8);
+  const bedMat = new THREE.MeshStandardMaterial({
+    color: 0xf59e0b,
+    map: bedTexture,
+    roughness: 0.6,
+    metalness: 0.4,
+  });
+  const bed = new THREE.Mesh(bedGeom, bedMat);
+  group.add(bed);
+
+  // 4 Anodized Bed Leveling Thumbwheels Underneath
+  [[-1.2, -1.2], [1.2, -1.2], [-1.2, 1.2], [1.2, 1.2]].forEach(([x, z]) => {
+    const wheelGeom = new THREE.CylinderGeometry(0.22, 0.22, 0.1, 16);
+    const wheelMat = getHardwareMat(0xef4444, 0.3, 0.85);
+    const wheel = new THREE.Mesh(wheelGeom, wheelMat);
+    wheel.position.set(x, -0.16, z);
+    group.add(wheel);
+  });
+
+  return group;
+}
+
+function buildRealistic3DPrinterSpool(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Dual Clear Acrylic Spool Flanges
+  const flangeGeom = new THREE.CylinderGeometry(1.1, 1.1, 0.05, 24);
+  const flangeMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.4,
+    roughness: 0.2,
+    metalness: 0.1,
+  });
+
+  [-0.26, 0.26].forEach((y) => {
+    const flange = new THREE.Mesh(flangeGeom, flangeMat);
+    flange.position.y = y;
+    group.add(flange);
+  });
+
+  // Wound Filament Core (Vibrant Crimson PLA)
+  const coreGeom = new THREE.CylinderGeometry(0.95, 0.95, 0.48, 24);
+  const coreMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.7 });
+  const core = new THREE.Mesh(coreGeom, coreMat);
+  group.add(core);
+
+  return group;
+}
+
+// -----------------------------------------------------------------------------
+// 18. MRI MACHINE PROCEDURAL COMPONENTS
+// -----------------------------------------------------------------------------
+function buildRealisticMRIGantry(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Outer Medical White Magnet Housing
+  const gantryGeom = new THREE.CylinderGeometry(2.6, 2.6, 3.2, 32);
+  const gantry = new THREE.Mesh(gantryGeom, baseMaterial);
+  group.add(gantry);
+
+  // Hollow Patient Tunnel Bore Opening
+  const boreGeom = new THREE.CylinderGeometry(1.35, 1.35, 3.25, 32);
+  const boreMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
+  const bore = new THREE.Mesh(boreGeom, boreMat);
+  group.add(bore);
+
+  // Soft Ambient Bore Halo Ring (Patient Comfort Lighting)
+  const haloGeom = new THREE.TorusGeometry(1.36, 0.04, 12, 36);
+  const haloMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x38bdf8,
+    emissiveIntensity: 1.5,
+  });
+  const halo = new THREE.Mesh(haloGeom, haloMat);
+  halo.position.y = 1.61;
+  halo.rotation.x = Math.PI / 2;
+  group.add(halo);
+
+  return group;
+}
+
+function buildRealisticMRIConsole(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Technologist Workstation Desk
+  const deskGeom = new THREE.BoxGeometry(1.6, 0.8, 0.8);
+  const deskMat = getHardwareMat(0x1e293b, 0.4, 0.7);
+  const desk = new THREE.Mesh(deskGeom, deskMat);
+  group.add(desk);
+
+  // Dual Medical Diagnostic Imaging LCD Displays
+  const mriTexture = makeCanvasTexture((ctx, sz) => {
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(0, 0, sz, sz);
+
+    // Simulated Axial MRI Brain Scan Contour
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(sz / 2, sz / 2, sz * 0.35, sz * 0.42, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 1.5;
+    for (let r = 0.15; r < 0.35; r += 0.05) {
+      ctx.beginPath();
+      ctx.ellipse(sz / 2, sz / 2, sz * r, sz * (r * 1.15), 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#22c55e';
+    ctx.font = '24px monospace';
+    ctx.fillText('T2 FSE 3.0T', 20, 36);
+    ctx.fillText('FOV: 220mm', 20, 68);
+  }, 256);
+
+  [-0.38, 0.38].forEach((x) => {
+    const monGeom = new THREE.BoxGeometry(0.7, 0.5, 0.04);
+    const monMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: mriTexture,
+      emissive: 0x112233,
+      emissiveIntensity: 0.4,
+    });
+    const mon = new THREE.Mesh(monGeom, monMat);
+    mon.position.set(x, 0.65, -0.1);
+    group.add(mon);
   });
 
   return group;

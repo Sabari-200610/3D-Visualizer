@@ -176,6 +176,11 @@ window.getDescription = getDescription;
 function getPartCategory(part) {
   const name = (part.name || '').toLowerCase();
   if (
+    name.includes('fuselage') ||
+    name.includes('wing') ||
+    name.includes('fin') ||
+    name.includes('gantry') ||
+    name.includes('bore') ||
     name.includes('frame') ||
     name.includes('body') ||
     name.includes('case') ||
@@ -186,6 +191,7 @@ function getPartCategory(part) {
     name.includes('lid') ||
     name.includes('saddle') ||
     name.includes('seat') ||
+    name.includes('bed') ||
     name.includes('housing')
   ) {
     return 'Structural Chassis';
@@ -193,6 +199,9 @@ function getPartCategory(part) {
   if (
     name.includes('screen') ||
     name.includes('display') ||
+    name.includes('cockpit') ||
+    name.includes('console') ||
+    name.includes('sensor') ||
     name.includes('lens') ||
     name.includes('glass') ||
     name.includes('light') ||
@@ -204,7 +213,7 @@ function getPartCategory(part) {
     name.includes('nucleus') ||
     name.includes('electron')
   ) {
-    return 'Optics & Display';
+    return 'Optics & Instrumentation';
   }
   if (
     name.includes('cpu') ||
@@ -230,12 +239,16 @@ function getPartCategory(part) {
     name.includes('compressor') ||
     name.includes('pump')
   ) {
-    return 'Thermal & Cooling';
+    return 'Thermal & Electromagnetics';
   }
   if (
     name.includes('wheel') ||
     name.includes('drum') ||
     name.includes('motor') ||
+    name.includes('stepper') ||
+    name.includes('extruder') ||
+    name.includes('crown') ||
+    name.includes('gear') ||
     name.includes('pedal') ||
     name.includes('chain') ||
     name.includes('engine') ||
@@ -1818,7 +1831,24 @@ function renderSpecificationsTable() {
 // -------------------------------------------------------------
 // MODEL SELECTOR & CATEGORIES (EVEN CARDS WITH ICONS)
 // -------------------------------------------------------------
-const CATEGORY_TABS = ['All', 'Electronics', 'Vehicles', 'Appliances', 'Science'];
+function getCategoryTabs() {
+  const preferred = ['All', 'Electronics', 'Vehicles', 'Appliances', 'Science', 'High-End Devices', 'Medical Devices'];
+  const present = new Set();
+  if (typeof OBJECTS !== 'undefined') {
+    Object.values(OBJECTS).forEach((o) => {
+      if (o && o.category) present.add(o.category);
+    });
+  }
+  const result = ['All'];
+  preferred.slice(1).forEach((cat) => {
+    if (present.has(cat)) result.push(cat);
+  });
+  present.forEach((cat) => {
+    if (!result.includes(cat)) result.push(cat);
+  });
+  return result;
+}
+
 let activeCategoryTab = 'All';
 
 function renderCategoryTabs() {
@@ -1826,7 +1856,8 @@ function renderCategoryTabs() {
   if (!container) return;
   container.innerHTML = '';
 
-  CATEGORY_TABS.forEach((cat) => {
+  const tabs = getCategoryTabs();
+  tabs.forEach((cat) => {
     const isActive = activeCategoryTab === cat;
     const btn = document.createElement('button');
     btn.type = 'button';
