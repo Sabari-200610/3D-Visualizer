@@ -602,6 +602,7 @@ function createRealisticMaterial(part) {
     } else if (
       n.includes('glass') ||
       n.includes('lens') ||
+      n.includes('cornea') ||
       n.includes('visor') ||
       n.includes('cockpit') ||
       n.includes('porthole')
@@ -741,6 +742,20 @@ function createRealisticMaterial(part) {
       clearcoat = 0.0;
       bumpMap = makeTexturedPlasticBumpMap();
       bumpScale = 0.008;
+    } else if (
+      n.includes('ventricle') ||
+      n.includes('atrium') ||
+      n.includes('heart') ||
+      n.includes('retina') ||
+      n.includes('tissue') ||
+      n.includes('nerve')
+    ) {
+      roughness = 0.65;
+      metalness = 0.04;
+      clearcoat = 0.25;
+      clearcoatRoughness = 0.35;
+      bumpMap = makeTexturedPlasticBumpMap();
+      bumpScale = 0.012;
     } else {
       // General engineered component: natural matte finish
       roughness = 0.65;

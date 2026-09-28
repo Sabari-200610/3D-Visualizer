@@ -193,7 +193,16 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
   // 11. AIRPLANE
   // ---------------------------------------------------------------------------
   else if (objectId === 'airplane') {
-    if (partId.includes('engine')) {
+    if (partId === 'fuselage') {
+      handled = true;
+      group = buildRealisticAirplaneFuselage(part, baseMaterial);
+    } else if (partId === 'wings') {
+      handled = true;
+      group = buildRealisticAirplaneWings(part, baseMaterial);
+    } else if (partId === 'tail-fin') {
+      handled = true;
+      group = buildRealisticAirplaneTail(part, baseMaterial);
+    } else if (partId.includes('engine')) {
       handled = true;
       group = buildRealisticAirplaneEngine(part, baseMaterial);
     } else if (partId === 'cockpit') {
@@ -209,12 +218,18 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
   // 12. SMARTWATCH
   // ---------------------------------------------------------------------------
   else if (objectId === 'smartwatch') {
-    if (partId === 'display') {
+    if (partId === 'case') {
+      handled = true;
+      group = buildRealisticSmartwatchCase(part, baseMaterial);
+    } else if (partId === 'display') {
       handled = true;
       group = buildRealisticSmartwatchDisplay(part, baseMaterial);
     } else if (partId === 'crown') {
       handled = true;
       group = buildRealisticSmartwatchCrown(part, baseMaterial);
+    } else if (partId === 'strap') {
+      handled = true;
+      group = buildRealisticSmartwatchStrap(part, baseMaterial);
     } else if (partId === 'sensor') {
       handled = true;
       group = buildRealisticSmartwatchSensor(part, baseMaterial);
@@ -225,7 +240,10 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
   // 13. 3D PRINTER
   // ---------------------------------------------------------------------------
   else if (objectId === 'printer-3d') {
-    if (partId === 'extruder') {
+    if (partId === 'frame') {
+      handled = true;
+      group = buildRealistic3DPrinterFrame(part, baseMaterial);
+    } else if (partId === 'extruder') {
       handled = true;
       group = buildRealistic3DPrinterExtruder(part, baseMaterial);
     } else if (partId === 'bed') {
@@ -234,6 +252,9 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
     } else if (partId === 'spool') {
       handled = true;
       group = buildRealistic3DPrinterSpool(part, baseMaterial);
+    } else if (partId === 'steppers') {
+      handled = true;
+      group = buildRealistic3DPrinterSteppers(part, baseMaterial);
     }
   }
 
@@ -244,9 +265,53 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
     if (partId === 'gantry') {
       handled = true;
       group = buildRealisticMRIGantry(part, baseMaterial);
+    } else if (partId === 'patient-table') {
+      handled = true;
+      group = buildRealisticMRITable(part, baseMaterial);
     } else if (partId === 'control-console') {
       handled = true;
       group = buildRealisticMRIConsole(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 15. HUMAN HEART (BIOLOGICAL SCIENCE)
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'human-heart') {
+    if (partId.includes('ventricle')) {
+      handled = true;
+      group = buildRealisticHeartVentricle(part, baseMaterial);
+    } else if (partId.includes('atrium')) {
+      handled = true;
+      group = buildRealisticHeartAtrium(part, baseMaterial);
+    } else if (partId === 'aorta') {
+      handled = true;
+      group = buildRealisticAorta(part, baseMaterial);
+    } else if (partId === 'major-veins') {
+      handled = true;
+      group = buildRealisticMajorVeins(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 16. HUMAN EYE (OPTICAL BIOLOGY)
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'human-eye') {
+    if (partId === 'cornea') {
+      handled = true;
+      group = buildRealisticEyeCornea(part, baseMaterial);
+    } else if (partId === 'iris') {
+      handled = true;
+      group = buildRealisticEyeIris(part, baseMaterial);
+    } else if (partId === 'lens') {
+      handled = true;
+      group = buildRealisticEyeLens(part, baseMaterial);
+    } else if (partId === 'retina') {
+      handled = true;
+      group = buildRealisticEyeRetina(part, baseMaterial);
+    } else if (partId === 'optic-nerve') {
+      handled = true;
+      group = buildRealisticOpticNerve(part, baseMaterial);
     }
   }
 
@@ -1737,6 +1802,116 @@ function buildRealisticACFan(part, baseMaterial) {
 // -----------------------------------------------------------------------------
 // 15. AIRPLANE PROCEDURAL COMPONENTS
 // -----------------------------------------------------------------------------
+function buildRealisticAirplaneFuselage(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Aerodynamic Cylindrical Fuselage
+  const fuseGeom = new THREE.CylinderGeometry(0.9, 0.9, 11.0, 32);
+  const fuse = new THREE.Mesh(fuseGeom, baseMaterial);
+  fuse.castShadow = true;
+  group.add(fuse);
+
+  // Passenger Cabin Windows Texture Strip (along sides)
+  const winTexture = makeCanvasTexture((ctx, sz) => {
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(0, 0, sz, sz);
+
+    // Row of passenger cabin oval windows
+    ctx.fillStyle = '#0f172a';
+    const numWins = 28;
+    const y1 = sz * 0.45;
+    const y2 = sz * 0.55;
+    const wWidth = sz / (numWins * 1.8);
+    const wHeight = sz * 0.04;
+    for (let i = 2; i < numWins - 2; i++) {
+      const x = (i / numWins) * sz;
+      ctx.fillRect(x, y1, wWidth, wHeight);
+      ctx.fillRect(x, y2, wWidth, wHeight);
+    }
+  }, 512);
+
+  const winMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map: winTexture,
+    roughness: 0.3,
+    metalness: 0.1,
+  });
+  const winShell = new THREE.Mesh(new THREE.CylinderGeometry(0.902, 0.902, 8.5, 32), winMat);
+  group.add(winShell);
+
+  return group;
+}
+
+function buildRealisticAirplaneWings(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Swept Main Wing Airfoil Body
+  const wingGeom = new THREE.BoxGeometry(12.0, 0.18, 2.4);
+  const wing = new THREE.Mesh(wingGeom, baseMaterial);
+  wing.castShadow = true;
+  group.add(wing);
+
+  // Aerodynamic Upturned Winglet Tips
+  [-6.0, 6.0].forEach((x) => {
+    const wletGeom = new THREE.BoxGeometry(0.12, 1.1, 0.8);
+    const wletMat = getHardwareMat(0x0284c7, 0.3, 0.7);
+    const wlet = new THREE.Mesh(wletGeom, wletMat);
+    wlet.position.set(x, 0.5, 0.2);
+    wlet.rotation.z = x > 0 ? -0.2 : 0.2;
+    group.add(wlet);
+
+    // Navigational Strobe Light (Red on Port, Green on Starboard)
+    const strobeColor = x < 0 ? 0xef4444 : 0x22c55e;
+    const strobeGeom = new THREE.SphereGeometry(0.06, 12, 12);
+    const strobeMat = new THREE.MeshStandardMaterial({
+      color: strobeColor,
+      emissive: strobeColor,
+      emissiveIntensity: 2.0,
+    });
+    const strobe = new THREE.Mesh(strobeGeom, strobeMat);
+    strobe.position.set(x, 1.05, 0.2);
+    group.add(strobe);
+  });
+
+  // Flap Track Fairings Underneath Wings
+  [-3.8, -1.8, 1.8, 3.8].forEach((x) => {
+    const fairGeom = new THREE.CylinderGeometry(0.06, 0.08, 1.2, 12);
+    fairGeom.rotateX(Math.PI / 2);
+    const fairMat = getHardwareMat(0x64748b, 0.3, 0.8);
+    const fair = new THREE.Mesh(fairGeom, fairMat);
+    fair.position.set(x, -0.16, -0.6);
+    group.add(fair);
+  });
+
+  return group;
+}
+
+function buildRealisticAirplaneTail(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Vertical Tail Fin Stabilizer
+  const finGeom = new THREE.BoxGeometry(0.18, 2.6, 2.0);
+  const fin = new THREE.Mesh(finGeom, baseMaterial);
+  fin.castShadow = true;
+  group.add(fin);
+
+  // Rudder Hinge Seam Accent
+  const rudderGeom = new THREE.BoxGeometry(0.2, 2.4, 0.6);
+  const rudderMat = getHardwareMat(0x0369a1, 0.3, 0.8);
+  const rudder = new THREE.Mesh(rudderGeom, rudderMat);
+  rudder.position.set(0, -0.05, -0.75);
+  group.add(rudder);
+
+  // Dual Horizontal Stabilizer Elevators at the Base
+  const horizGeom = new THREE.BoxGeometry(4.8, 0.12, 1.2);
+  const horizMat = getHardwareMat(0x94a3b8, 0.3, 0.8);
+  const horiz = new THREE.Mesh(horizGeom, horizMat);
+  horiz.position.set(0, -1.0, 0.1);
+  group.add(horiz);
+
+  return group;
+}
+
 function buildRealisticAirplaneEngine(part, baseMaterial) {
   const group = new THREE.Group();
 
@@ -1775,6 +1950,14 @@ function buildRealisticAirplaneEngine(part, baseMaterial) {
     fanGroup.add(blade);
   }
   group.add(fanGroup);
+
+  // Titanium Exhaust Plug Cone at Rear
+  const exGeom = new THREE.ConeGeometry(0.24, 0.6, 20);
+  const exMat = getHardwareMat(0x334155, 0.5, 0.9);
+  const ex = new THREE.Mesh(exGeom, exMat);
+  ex.position.y = -1.35;
+  ex.rotation.x = Math.PI;
+  group.add(ex);
 
   COMPONENT_ANIMATORS.push((delta) => {
     fanGroup.rotation.y += delta * 15.0;
@@ -1845,58 +2028,103 @@ function buildRealisticAirplaneLandingGear(part, baseMaterial) {
 // -----------------------------------------------------------------------------
 // 16. SMARTWATCH PROCEDURAL COMPONENTS
 // -----------------------------------------------------------------------------
+function buildRealisticSmartwatchCase(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Titanium Watch Case Body
+  const caseGeom = new THREE.BoxGeometry(1.8, 2.2, 0.45);
+  const caseMesh = new THREE.Mesh(caseGeom, baseMaterial);
+  caseMesh.castShadow = true;
+  group.add(caseMesh);
+
+  // Left Side Acoustic Speaker Ports
+  for (let s = -0.3; s <= 0.3; s += 0.15) {
+    const slitGeom = new THREE.BoxGeometry(0.04, 0.08, 0.12);
+    const slitMat = getHardwareMat(0x0f172a, 0.4, 0.7);
+    const slit = new THREE.Mesh(slitGeom, slitMat);
+    slit.position.set(-0.91, s, 0);
+    group.add(slit);
+  }
+
+  // Right Side Microphone Pinhole
+  const micGeom = new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12);
+  const micMat = getHardwareMat(0x0f172a, 0.4, 0.7);
+  const mic = new THREE.Mesh(micGeom, micMat);
+  mic.rotation.z = Math.PI / 2;
+  mic.position.set(0.91, -0.3, 0);
+  group.add(mic);
+
+  return group;
+}
+
 function buildRealisticSmartwatchDisplay(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // OLED Screen Glass with UI Texture
-  const screenGeom = new THREE.BoxGeometry(1.55, 1.95, 0.05);
-  const uiTexture = makeCanvasTexture((ctx, sz) => {
-    ctx.fillStyle = '#0a0e17';
-    ctx.fillRect(0, 0, sz, sz);
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const uiTexture = new THREE.CanvasTexture(canvas);
+
+  function drawWatchFace(timeSec) {
+    ctx.fillStyle = '#070a12';
+    ctx.fillRect(0, 0, 512, 512);
 
     // Digital Time Readout
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 110px monospace';
+    ctx.font = 'bold 96px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('10:09', sz / 2, sz * 0.38);
+    ctx.fillText('10:09', 256, 185);
+
+    // Date Subtitle
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '500 28px sans-serif';
+    ctx.fillText('MON 28 SEP', 256, 230);
 
     // Activity Rings (Move, Exercise, Stand)
-    const cx = sz / 2, cy = sz * 0.65;
+    const cx = 256, cy = 330;
     const rings = [
-      { r: 90, color: '#ef4444', pct: 0.82 },
-      { r: 68, color: '#22c55e', pct: 0.65 },
-      { r: 46, color: '#38bdf8', pct: 0.90 },
+      { r: 85, color: '#ef4444', pct: 0.82 },
+      { r: 64, color: '#22c55e', pct: 0.65 },
+      { r: 43, color: '#38bdf8', pct: 0.90 },
     ];
     rings.forEach((ring) => {
       ctx.beginPath();
       ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
       ctx.strokeStyle = '#1e293b';
-      ctx.lineWidth = 14;
+      ctx.lineWidth = 13;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.arc(cx, cy, ring.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ring.pct);
       ctx.strokeStyle = ring.color;
-      ctx.lineWidth = 14;
+      ctx.lineWidth = 13;
       ctx.lineCap = 'round';
       ctx.stroke();
     });
 
-    // Heart rate & Battery info
+    // Heart Rate & Battery info with Pulsing Heart Icon
+    const pulseScale = 1.0 + Math.sin(timeSec * 4.0) * 0.15;
     ctx.fillStyle = '#ef4444';
-    ctx.font = '600 32px sans-serif';
-    ctx.fillText('♥ 72 BPM', sz * 0.3, sz * 0.92);
+    ctx.font = `${Math.round(26 * pulseScale)}px sans-serif`;
+    ctx.fillText('♥ 74 BPM', 140, 465);
 
     ctx.fillStyle = '#22c55e';
-    ctx.fillText('⚡ 94%', sz * 0.72, sz * 0.92);
-  }, 512);
+    ctx.font = '26px sans-serif';
+    ctx.fillText('⚡ 96%', 370, 465);
 
+    uiTexture.needsUpdate = true;
+  }
+
+  drawWatchFace(0);
+
+  const screenGeom = new THREE.BoxGeometry(1.55, 1.95, 0.05);
   const screenMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: uiTexture,
     roughness: 0.15,
     metalness: 0.05,
-    emissive: 0x223344,
+    emissive: 0x1e293b,
     emissiveIntensity: 0.35,
   });
   const screen = new THREE.Mesh(screenGeom, screenMat);
@@ -1908,6 +2136,14 @@ function buildRealisticSmartwatchDisplay(part, baseMaterial) {
   const bezelMat = new THREE.LineBasicMaterial({ color: 0x475569 });
   const bezel = new THREE.LineSegments(wireGeom, bezelMat);
   group.add(bezel);
+
+  let lastTimeUpdate = 0;
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    if (time - lastTimeUpdate > 0.1) {
+      lastTimeUpdate = time;
+      drawWatchFace(time);
+    }
+  });
 
   return group;
 }
@@ -1933,30 +2169,61 @@ function buildRealisticSmartwatchCrown(part, baseMaterial) {
   return group;
 }
 
+function buildRealisticSmartwatchStrap(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Dual Sports Band Straps (Top and Bottom)
+  const strapGeom = new THREE.BoxGeometry(1.4, 4.4, 0.16);
+  const strap = new THREE.Mesh(strapGeom, baseMaterial);
+  group.add(strap);
+
+  // Ventilation Holes
+  [-1.4, -1.1, -0.8, 0.8, 1.1, 1.4].forEach((y) => {
+    const holeGeom = new THREE.CylinderGeometry(0.08, 0.08, 0.18, 16);
+    const holeMat = getHardwareMat(0x0f172a, 0.5, 0.7);
+    const hole = new THREE.Mesh(holeGeom, holeMat);
+    hole.rotation.x = Math.PI / 2;
+    hole.position.set(0, y, 0);
+    group.add(hole);
+  });
+
+  return group;
+}
+
 function buildRealisticSmartwatchSensor(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Zirconia Ceramic Sensor Backing Disc
+  // Ceramic Sensor Backing Disc
   const discGeom = new THREE.CylinderGeometry(0.55, 0.55, 0.08, 28);
   const discMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.2, metalness: 0.1 });
   const disc = new THREE.Mesh(discGeom, discMat);
   disc.rotation.x = Math.PI / 2;
   group.add(disc);
 
-  // 4 Green Optical LED Emitter / Photodiode Lenses
+  // 4 Green Optical LED Emitter / Photodiode Lenses with Pulsing Bio-Luminescence
+  const ledGroup = new THREE.Group();
+  ledGroup.rotation.x = Math.PI / 2;
   for (let i = 0; i < 4; i++) {
     const angle = (i / 4) * Math.PI * 2;
     const lensGeom = new THREE.SphereGeometry(0.08, 16, 16);
     const lensMat = new THREE.MeshStandardMaterial({
       color: 0x22c55e,
       emissive: 0x22c55e,
-      emissiveIntensity: 0.8,
+      emissiveIntensity: 1.2,
       roughness: 0.1,
     });
     const lens = new THREE.Mesh(lensGeom, lensMat);
     lens.position.set(Math.cos(angle) * 0.26, Math.sin(angle) * 0.26, 0.04);
-    group.add(lens);
+    ledGroup.add(lens);
   }
+  group.add(ledGroup);
+
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const pulse = 0.8 + Math.sin(time * 5.0) * 0.6;
+    ledGroup.children.forEach((c) => {
+      if (c.material) c.material.emissiveIntensity = pulse;
+    });
+  });
 
   return group;
 }
@@ -1964,6 +2231,32 @@ function buildRealisticSmartwatchSensor(part, baseMaterial) {
 // -----------------------------------------------------------------------------
 // 17. 3D PRINTER PROCEDURAL COMPONENTS
 // -----------------------------------------------------------------------------
+function buildRealistic3DPrinterFrame(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Gantry Frame Chassis
+  const frameGeom = new THREE.BoxGeometry(3.8, 4.2, 3.6);
+  const frame = new THREE.Mesh(frameGeom, baseMaterial);
+  group.add(frame);
+
+  // Dual Z-Axis Threaded Lead Screws & Smooth Linear Rods
+  [-1.5, 1.5].forEach((x) => {
+    const screwGeom = new THREE.CylinderGeometry(0.06, 0.06, 4.0, 16);
+    const screwMat = getHardwareMat(0xe2e8f0, 0.2, 0.95);
+    const screw = new THREE.Mesh(screwGeom, screwMat);
+    screw.position.set(x, 0, -1.3);
+    group.add(screw);
+
+    const rodGeom = new THREE.CylinderGeometry(0.07, 0.07, 4.0, 16);
+    const rodMat = getHardwareMat(0x94a3b8, 0.15, 0.95);
+    const rod = new THREE.Mesh(rodGeom, rodMat);
+    rod.position.set(x, 0, -1.05);
+    group.add(rod);
+  });
+
+  return group;
+}
+
 function buildRealistic3DPrinterExtruder(part, baseMaterial) {
   const group = new THREE.Group();
 
@@ -1981,9 +2274,15 @@ function buildRealistic3DPrinterExtruder(part, baseMaterial) {
   fan.position.set(0, 0.05, 0.36);
   group.add(fan);
 
-  // Brass 0.4mm Hotend Nozzle Tip
+  // Brass 0.4mm Hotend Nozzle Tip with Glowing Thermal Zone
   const nozzleGeom = new THREE.ConeGeometry(0.08, 0.22, 16);
-  const nozzleMat = getHardwareMat(0xf59e0b, 0.2, 0.9);
+  const nozzleMat = new THREE.MeshStandardMaterial({
+    color: 0xf59e0b,
+    emissive: 0xef4444,
+    emissiveIntensity: 0.6,
+    metalness: 0.85,
+    roughness: 0.2,
+  });
   const nozzle = new THREE.Mesh(nozzleGeom, nozzleMat);
   nozzle.rotation.x = Math.PI;
   nozzle.position.set(0, -0.48, 0);
@@ -2067,6 +2366,24 @@ function buildRealistic3DPrinterSpool(part, baseMaterial) {
   return group;
 }
 
+function buildRealistic3DPrinterSteppers(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // NEMA-17 Industrial Stepper Motor Body
+  const motorGeom = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+  const motor = new THREE.Mesh(motorGeom, baseMaterial);
+  group.add(motor);
+
+  // Toothed Aluminum Drive Pulley & Output Shaft
+  const shaftGeom = new THREE.CylinderGeometry(0.12, 0.12, 0.35, 16);
+  const shaftMat = getHardwareMat(0xe2e8f0, 0.2, 0.95);
+  const shaft = new THREE.Mesh(shaftGeom, shaftMat);
+  shaft.position.y = 0.52;
+  group.add(shaft);
+
+  return group;
+}
+
 // -----------------------------------------------------------------------------
 // 18. MRI MACHINE PROCEDURAL COMPONENTS
 // -----------------------------------------------------------------------------
@@ -2095,6 +2412,32 @@ function buildRealisticMRIGantry(part, baseMaterial) {
   halo.position.y = 1.61;
   halo.rotation.x = Math.PI / 2;
   group.add(halo);
+
+  return group;
+}
+
+function buildRealisticMRITable(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Carbon-Fiber Motorized Table Base
+  const tableGeom = new THREE.BoxGeometry(1.2, 0.4, 5.2);
+  const table = new THREE.Mesh(tableGeom, baseMaterial);
+  group.add(table);
+
+  // Contoured Sanitized Memory Foam Patient Mattress
+  const padGeom = new THREE.BoxGeometry(1.08, 0.12, 4.8);
+  const padMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.85 });
+  const pad = new THREE.Mesh(padGeom, padMat);
+  pad.position.y = 0.24;
+  group.add(pad);
+
+  // Head/Neck Matrix RF Imaging Coil Cradle
+  const coilGeom = new THREE.CylinderGeometry(0.38, 0.38, 0.75, 16, 1, true, 0, Math.PI);
+  coilGeom.rotateX(Math.PI / 2);
+  const coilMat = getHardwareMat(0xe2e8f0, 0.3, 0.8);
+  const coil = new THREE.Mesh(coilGeom, coilMat);
+  coil.position.set(0, 0.55, -1.8);
+  group.add(coil);
 
   return group;
 }
@@ -2146,6 +2489,324 @@ function buildRealisticMRIConsole(part, baseMaterial) {
     mon.position.set(x, 0.65, -0.1);
     group.add(mon);
   });
+
+  return group;
+}
+
+// -----------------------------------------------------------------------------
+// 19. HUMAN HEART PROCEDURAL BIOMECHANICS & HEMODYNAMICS
+// -----------------------------------------------------------------------------
+function buildRealisticHeartVentricle(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Muscle Myocardial Wall Geometry
+  const r = part.geometry.args[0] || 1.0;
+  const ventGeom = new THREE.SphereGeometry(r, 28, 28);
+  ventGeom.scale(0.9, 1.25, 0.95);
+  const ventMat = new THREE.MeshStandardMaterial({
+    color: part.color,
+    roughness: 0.75,
+    metalness: 0.1,
+    bumpMap: makeTexturedPlasticBumpMap(),
+    bumpScale: 0.015,
+  });
+  const vent = new THREE.Mesh(ventGeom, ventMat);
+  vent.castShadow = true;
+  group.add(vent);
+
+  // Branching Coronary Arteries (Anterior Interventricular Artery)
+  const pts = [
+    new THREE.Vector3(0, r * 0.9, r * 0.8),
+    new THREE.Vector3(0.15, r * 0.3, r * 0.9),
+    new THREE.Vector3(-0.1, -r * 0.2, r * 0.85),
+    new THREE.Vector3(0.05, -r * 0.8, r * 0.5),
+  ];
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const arteryGeom = new THREE.TubeGeometry(curve, 20, 0.04, 8, false);
+  const arteryMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+  const artery = new THREE.Mesh(arteryGeom, arteryMat);
+  group.add(artery);
+
+  // Rhythmic Sinus-Rhythm Cardiac Contraction (lub-dub heart beat)
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const t = (time * 1.8) % 1.0;
+    const lub = Math.exp(-Math.pow(t - 0.2, 2) * 80);
+    const dub = Math.exp(-Math.pow(t - 0.45, 2) * 80);
+    const scale = 1.0 + (lub * 0.08 + dub * 0.05);
+    group.scale.set(scale, 1.0 + (lub * 0.05 + dub * 0.03), scale);
+  });
+
+  return group;
+}
+
+function buildRealisticHeartAtrium(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  const r = part.geometry.args[0] || 0.8;
+  const atriumGeom = new THREE.SphereGeometry(r, 24, 24);
+  atriumGeom.scale(1.1, 0.9, 1.0);
+  const atriumMat = new THREE.MeshStandardMaterial({
+    color: part.color,
+    roughness: 0.8,
+    metalness: 0.05,
+    bumpMap: makeTexturedPlasticBumpMap(),
+    bumpScale: 0.012,
+  });
+  const atrium = new THREE.Mesh(atriumGeom, atriumMat);
+  atrium.castShadow = true;
+  group.add(atrium);
+
+  // Atrial Auricle Appendage
+  const auricleGeom = new THREE.ConeGeometry(r * 0.5, r * 0.6, 16);
+  const auricleMat = atriumMat;
+  const auricle = new THREE.Mesh(auricleGeom, auricleMat);
+  auricle.position.set(r * 0.6, 0.1, r * 0.4);
+  auricle.rotation.z = -0.5;
+  group.add(auricle);
+
+  // Synchronous Pre-Ventricular Atrial Kick Pulsation
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const t = (time * 1.8) % 1.0;
+    const atrialKick = Math.exp(-Math.pow(t - 0.08, 2) * 80);
+    const scale = 1.0 + atrialKick * 0.07;
+    group.scale.set(scale, scale, scale);
+  });
+
+  return group;
+}
+
+function buildRealisticAorta(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // High-Pressure Ascending Aorta Trunk
+  const aortaGeom = new THREE.CylinderGeometry(0.45, 0.45, 2.2, 24);
+  const aorta = new THREE.Mesh(aortaGeom, baseMaterial);
+  group.add(aorta);
+
+  // Three Primary Arch Arteries: Brachiocephalic, Common Carotid, Subclavian
+  [-0.3, 0, 0.3].forEach((offset) => {
+    const branchGeom = new THREE.CylinderGeometry(0.12, 0.14, 0.8, 16);
+    const branchMat = getHardwareMat(0xef4444, 0.4, 0.6);
+    const branch = new THREE.Mesh(branchGeom, branchMat);
+    branch.position.set(offset * 0.7, 1.25, offset * 0.4);
+    branch.rotation.z = offset * 0.4;
+    group.add(branch);
+  });
+
+  return group;
+}
+
+function buildRealisticMajorVeins(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Vena Cava Vertical Venous Trunk
+  const vcGeom = new THREE.CylinderGeometry(0.4, 0.4, 2.6, 20);
+  const vc = new THREE.Mesh(vcGeom, baseMaterial);
+  group.add(vc);
+
+  // Pulmonary Vein Conduits
+  const pvGeom = new THREE.CylinderGeometry(0.2, 0.2, 1.1, 16);
+  const pvMat = getHardwareMat(0x1d4ed8, 0.4, 0.6);
+  const pv1 = new THREE.Mesh(pvGeom, pvMat);
+  pv1.rotation.z = Math.PI / 2;
+  pv1.position.set(-0.6, 0.4, 0);
+  group.add(pv1);
+
+  return group;
+}
+
+// -----------------------------------------------------------------------------
+// 20. HUMAN EYE PROCEDURAL OPTICS & NEURAL RETINA
+// -----------------------------------------------------------------------------
+function buildRealisticEyeCornea(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // High-Refractive Transparent Cornea Dome
+  const corneaGeom = new THREE.SphereGeometry(0.85, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.45);
+  const corneaMat = new THREE.MeshPhysicalMaterial({
+    color: 0xe0f2fe,
+    transmission: 0.95,
+    ior: 1.376, // Human corneal refractive index
+    roughness: 0.05,
+    metalness: 0.05,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.05,
+    transparent: true,
+    opacity: 0.85,
+  });
+  const cornea = new THREE.Mesh(corneaGeom, corneaMat);
+  cornea.rotation.x = -Math.PI / 2;
+  group.add(cornea);
+
+  // Limbal Boundary Ring (Transition between cornea and sclera)
+  const limbusGeom = new THREE.TorusGeometry(0.82, 0.03, 12, 36);
+  const limbusMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.4,
+    roughness: 0.3,
+  });
+  const limbus = new THREE.Mesh(limbusGeom, limbusMat);
+  group.add(limbus);
+
+  return group;
+}
+
+function buildRealisticEyeIris(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Procedural Ultra-Realistic Iris Texture with Crypts & Pupil Aperture
+  const irisTexture = makeCanvasTexture((ctx, sz) => {
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(0, 0, sz, sz);
+
+    const cx = sz / 2, cy = sz / 2;
+    const outerR = sz * 0.48;
+    const innerR = sz * 0.17; // Central pupil hole
+
+    // Deep radial striae and pupillary crypt fibers
+    for (let i = 0; i < 360; i += 0.8) {
+      const angle = (i * Math.PI) / 180;
+      const shade = 140 + Math.sin(i * 12.0) * 60 + Math.random() * 40;
+      ctx.strokeStyle = `rgb(10, ${Math.min(255, Math.round(shade * 1.1))}, ${Math.min(255, Math.round(shade * 1.5))})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * innerR, cy + Math.sin(angle) * innerR);
+      ctx.lineTo(cx + Math.cos(angle) * outerR, cy + Math.sin(angle) * outerR);
+      ctx.stroke();
+    }
+
+    // Outer Limbal Ring Dark Border
+    const grad = ctx.createRadialGradient(cx, cy, outerR * 0.8, cx, cy, outerR);
+    grad.addColorStop(0, 'rgba(3, 105, 161, 0)');
+    grad.addColorStop(1, 'rgba(8, 47, 73, 0.95)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Central Pupil (Deep Black Aperture)
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+    ctx.fill();
+  }, 512);
+
+  const irisGeom = new THREE.CylinderGeometry(0.78, 0.78, 0.05, 32);
+  const irisMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map: irisTexture,
+    roughness: 0.3,
+    metalness: 0.1,
+  });
+  const iris = new THREE.Mesh(irisGeom, irisMat);
+  group.add(iris);
+
+  return group;
+}
+
+function buildRealisticEyeLens(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Biconvex Crystalline Optical Lens
+  const lensGeom = new THREE.CylinderGeometry(0.65, 0.65, 0.22, 28);
+  const lensMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    transmission: 0.96,
+    ior: 1.406, // Human lens refractive index
+    roughness: 0.05,
+    metalness: 0.0,
+    transparent: true,
+    opacity: 0.7,
+    clearcoat: 1.0,
+  });
+  const lens = new THREE.Mesh(lensGeom, lensMat);
+  group.add(lens);
+
+  // Zonular Suspensory Fibers Ring
+  const zonuleGeom = new THREE.TorusGeometry(0.72, 0.03, 12, 32);
+  const zonuleMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.5 });
+  const zonule = new THREE.Mesh(zonuleGeom, zonuleMat);
+  group.add(zonule);
+
+  return group;
+}
+
+function buildRealisticEyeRetina(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Sclera Outer White Shell with Retinal Inner Map
+  const retinaTexture = makeCanvasTexture((ctx, sz) => {
+    ctx.fillStyle = '#e2e8f0'; // Outer scleral white
+    ctx.fillRect(0, 0, sz, sz);
+
+    // Inner retinal fundus color gradient
+    const cx = sz / 2, cy = sz / 2;
+    const fundusGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, sz * 0.45);
+    fundusGrad.addColorStop(0, '#f97316');
+    fundusGrad.addColorStop(0.6, '#ea580c');
+    fundusGrad.addColorStop(1, '#9a3412');
+    ctx.fillStyle = fundusGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, sz * 0.44, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Optic Disc (Blind Spot) Pale Yellow
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(cx * 0.75, cy * 0.9, sz * 0.06, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Macula & Fovea Centralis Dark Spot
+    ctx.fillStyle = '#7c2d12';
+    ctx.beginPath();
+    ctx.arc(cx * 1.15, cy * 0.9, sz * 0.04, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Branching Retinal Blood Vessels (Arterioles in Red, Venules in Crimson)
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2.5;
+    for (let v = 0; v < 6; v++) {
+      const a = (v / 6) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx * 0.75, cy * 0.9);
+      ctx.quadraticCurveTo(
+        cx * 0.75 + Math.cos(a) * sz * 0.2,
+        cy * 0.9 + Math.sin(a) * sz * 0.2,
+        cx * 0.75 + Math.cos(a + 0.3) * sz * 0.38,
+        cy * 0.9 + Math.sin(a + 0.3) * sz * 0.38
+      );
+      ctx.stroke();
+    }
+  }, 512);
+
+  const sphereGeom = new THREE.SphereGeometry(1.5, 32, 32);
+  const sphereMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map: retinaTexture,
+    roughness: 0.65,
+    metalness: 0.05,
+  });
+  const sphere = new THREE.Mesh(sphereGeom, sphereMat);
+  sphere.castShadow = true;
+  group.add(sphere);
+
+  return group;
+}
+
+function buildRealisticOpticNerve(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Myelinated Nerve Cable Trunk
+  const nerveGeom = new THREE.CylinderGeometry(0.35, 0.35, 1.8, 20);
+  const nerve = new THREE.Mesh(nerveGeom, baseMaterial);
+  group.add(nerve);
+
+  // Central Retinal Artery & Vein Core Entry
+  const coreGeom = new THREE.CylinderGeometry(0.1, 0.1, 1.82, 12);
+  const coreMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+  const core = new THREE.Mesh(coreGeom, coreMat);
+  group.add(core);
 
   return group;
 }

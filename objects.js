@@ -93,7 +93,7 @@ const OBJECTS = {
 
   atom: {
     label: 'Quantum Atom',
-    category: 'Science',
+    category: 'Science & Concepts',
     icon: '⚛️',
     viewRadius: 4.5,
     explodeDistance: 1.1,
@@ -135,7 +135,7 @@ const OBJECTS = {
 
   'solar-system': {
     label: 'Solar System',
-    category: 'Science',
+    category: 'Science & Concepts',
     icon: '🪐',
     viewRadius: 22,
     explodeDistance: 4.5,
@@ -856,6 +856,122 @@ const OBJECTS = {
         geometry: { type: 'box', args: [1.6, 1.4, 0.8] },
         position: [3.2, 1.0, 2.2],
         description: 'Diagnostic workstation outside the RF shielded scan room where technicians configure scan protocols and reconstruct 3D slice data.'
+      },
+    ],
+  },
+
+  'human-heart': {
+    label: 'Human Heart',
+    category: 'Science & Concepts',
+    icon: '🫀',
+    viewRadius: 9.0,
+    explodeDistance: 2.2,
+    parts: [
+      {
+        id: 'left-ventricle',
+        name: 'Left Ventricle',
+        color: 0x991b1b,
+        geometry: { type: 'sphere', args: [1.1, 28, 28] },
+        position: [-0.45, -0.6, 0.2],
+        description: 'The thickest muscular chamber of the heart that contracts with high pressure to pump oxygen-rich blood through the aortic valve into systemic circulation.'
+      },
+      {
+        id: 'right-ventricle',
+        name: 'Right Ventricle',
+        color: 0xb91c1c,
+        geometry: { type: 'sphere', args: [0.95, 24, 24] },
+        position: [0.55, -0.5, 0.35],
+        description: 'Pumps low-pressure deoxygenated blood through the pulmonary valve into the pulmonary trunk and lungs for oxygenation.'
+      },
+      {
+        id: 'left-atrium',
+        name: 'Left Atrium',
+        color: 0xd97706,
+        geometry: { type: 'sphere', args: [0.75, 24, 24] },
+        position: [-0.6, 0.8, -0.4],
+        description: 'Receives freshly oxygenated blood returning from the lungs via pulmonary veins and transfers it into the left ventricle through the mitral valve.'
+      },
+      {
+        id: 'right-atrium',
+        name: 'Right Atrium',
+        color: 0x2563eb,
+        geometry: { type: 'sphere', args: [0.8, 24, 24] },
+        position: [0.9, 0.7, 0.1],
+        description: 'Receives deoxygenated systemic venous return from the superior and inferior vena cava and routes it through the tricuspid valve into the right ventricle.'
+      },
+      {
+        id: 'aorta',
+        name: 'Aorta',
+        color: 0xef4444,
+        geometry: { type: 'cylinder', args: [0.45, 0.45, 2.2, 24] },
+        position: [-0.1, 1.9, 0.0],
+        rotation: [0.2, 0, -0.25],
+        description: 'The primary and largest systemic artery emerging from the left ventricle, arching over the pulmonary trunk to supply oxygenated blood to the body.'
+      },
+      {
+        id: 'major-veins',
+        name: 'Major Veins (Vena Cava & Pulmonary)',
+        color: 0x1d4ed8,
+        geometry: { type: 'cylinder', args: [0.4, 0.4, 2.6, 20] },
+        position: [1.1, 1.4, -0.3],
+        description: 'Large vascular conduits including the Superior & Inferior Vena Cava returning systemic venous blood, and pulmonary veins channeling blood to the left atrium.'
+      },
+    ],
+  },
+
+  'human-eye': {
+    label: 'Human Eye',
+    category: 'Science & Concepts',
+    icon: '👁️',
+    viewRadius: 7.5,
+    explodeDistance: 1.8,
+    parts: [
+      {
+        id: 'cornea',
+        name: 'Cornea',
+        color: 0x38bdf8,
+        geometry: { type: 'sphere', args: [0.85, 28, 28] },
+        position: [0, 0, 1.45],
+        transparent: true,
+        opacity: 0.45,
+        description: 'The clear, curved anterior outer dome providing approximately two-thirds of the eye’s total optical refractive power and protecting internal structures.'
+      },
+      {
+        id: 'iris',
+        name: 'Iris',
+        color: 0x0284c7,
+        geometry: { type: 'cylinder', args: [0.78, 0.78, 0.06, 32] },
+        position: [0, 0, 1.25],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'The pigmented muscular ring with dilator and sphincter pupillae muscles that adjust the central pupil diameter in response to ambient illumination.'
+      },
+      {
+        id: 'lens',
+        name: 'Lens',
+        color: 0x93c5fd,
+        geometry: { type: 'cylinder', args: [0.65, 0.65, 0.22, 28] },
+        position: [0, 0, 0.95],
+        rotation: [Math.PI / 2, 0, 0],
+        transparent: true,
+        opacity: 0.7,
+        description: 'A flexible, biconvex crystalline structure that dynamically alters focal curvature (accommodation) to focus light sharply onto the retina.'
+      },
+      {
+        id: 'retina',
+        name: 'Retina',
+        color: 0xd97706,
+        geometry: { type: 'sphere', args: [1.5, 32, 32] },
+        position: [0, 0, 0],
+        description: 'The photoreceptive neurosensory lining containing millions of rod and cone cells, converting focused light patterns into biochemical neural impulses.'
+      },
+      {
+        id: 'optic-nerve',
+        name: 'Optic Nerve',
+        color: 0xfef08a,
+        geometry: { type: 'cylinder', args: [0.35, 0.35, 1.8, 20] },
+        position: [0.2, -0.1, -1.9],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'A bundled cable of over one million retinal ganglion cell axons shielded in myelin, transmitting visual information directly to the visual cortex.'
       },
     ],
   },

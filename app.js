@@ -197,12 +197,31 @@ function getPartCategory(part) {
     return 'Structural Chassis';
   }
   if (
+    name.includes('atrium') ||
+    name.includes('ventricle') ||
+    name.includes('aorta') ||
+    name.includes('vein') ||
+    name.includes('artery')
+  ) {
+    return 'Cardiovascular Anatomy';
+  }
+  if (
+    name.includes('cornea') ||
+    name.includes('iris') ||
+    name.includes('lens') ||
+    name.includes('retina') ||
+    name.includes('optic') ||
+    name.includes('pupil') ||
+    name.includes('sclera')
+  ) {
+    return 'Ocular & Sensory Anatomy';
+  }
+  if (
     name.includes('screen') ||
     name.includes('display') ||
     name.includes('cockpit') ||
     name.includes('console') ||
     name.includes('sensor') ||
-    name.includes('lens') ||
     name.includes('glass') ||
     name.includes('light') ||
     name.includes('porthole') ||
@@ -1832,7 +1851,7 @@ function renderSpecificationsTable() {
 // MODEL SELECTOR & CATEGORIES (EVEN CARDS WITH ICONS)
 // -------------------------------------------------------------
 function getCategoryTabs() {
-  const preferred = ['All', 'Electronics', 'Vehicles', 'Appliances', 'Science', 'High-End Devices', 'Medical Devices'];
+  const preferred = ['All', 'Electronics', 'Vehicles', 'Appliances', 'Science & Concepts', 'High-End Devices', 'Medical Devices'];
   const present = new Set();
   if (typeof OBJECTS !== 'undefined') {
     Object.values(OBJECTS).forEach((o) => {
