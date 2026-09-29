@@ -122,3 +122,44 @@ pre,
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* Toast Notifications */
+.toast-notification {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(16, 22, 34, 0.96);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.2);
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 500;
+  transform: translateY(-8px);
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-notification.toast-show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast-notification.toast-hide {
+  transform: translateY(-8px);
+  opacity: 0;
+}
+
+/* Suggestion Card in Queue */
+.sug-queue-card {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sug-queue-card:hover {
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+

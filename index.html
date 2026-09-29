@@ -77,6 +77,16 @@
 
     <!-- Header Actions -->
     <div class="flex items-center gap-2">
+      <!-- Suggest Model Button -->
+      <button id="openSuggestionModalBtn"
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white shadow-md hover:shadow-indigo-500/25 transition-all cursor-pointer group"
+        title="Suggest a new model or component to add and visualize">
+        <svg class="w-3.5 h-3.5 text-amber-300 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2a7 7 0 00-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 001 1h6a1 1 0 001-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 00-7-7zm-2 18a1 1 0 001 1h2a1 1 0 001-1v-1h-4v1z"/>
+        </svg>
+        <span class="font-medium">Suggest</span>
+      </button>
+
       <!-- Persistent Help (?) Button -->
       <button id="openHelpModalBtn"
         class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-[#161d28] hover:bg-[#1e2736] border border-[#2a364a] text-slate-300 hover:text-white transition-colors"
@@ -168,9 +178,16 @@
         </div>
 
         <!-- Model Cards Grid Container -->
-        <div class="flex-1 overflow-y-auto p-2.5 overscroll-contain">
+        <div class="flex-1 overflow-y-auto p-2.5 overscroll-contain flex flex-col justify-between">
           <div id="objectSelectorGrid" class="grid grid-cols-2 gap-2">
             <!-- Populated dynamically via JS -->
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-[#1b2535]">
+            <button id="sidebarSuggestBtn" type="button"
+              class="w-full py-1.5 px-2.5 rounded-lg bg-[#131a27] hover:bg-[#182232] border border-dashed border-[#2b3a50] hover:border-blue-500/70 text-[11px] text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+              <span class="text-amber-400">💡</span>
+              <span>Can't find a model? <span class="text-blue-400 underline decoration-blue-500/50 font-medium">Suggest a component</span></span>
+            </button>
           </div>
         </div>
       </div>
@@ -946,6 +963,163 @@
       </button>
     </form>
   </div>
+
+  <!-- Suggestion Modal: Suggest What Components/Models to Add and Visualize -->
+  <div id="suggestionModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden transition-all">
+    <div
+      class="bg-[#101622] border border-[#2b3a4f] rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-[#242e40] bg-[#131a28] flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md">
+            <svg class="w-4 h-4 text-amber-300" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2a7 7 0 00-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 001 1h6a1 1 0 001-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 00-7-7zm-2 18a1 1 0 001 1h2a1 1 0 001-1v-1h-4v1z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <span>Suggest Components to Add &amp; Visualize</span>
+              <span class="text-[10px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/40 px-1.5 py-0.5 rounded">Community CAD</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Suggest new machines, mechanisms, devices, or biological concepts to visualize in 3D.</p>
+          </div>
+        </div>
+        <button id="closeSuggestionModalBtn"
+          class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1e2736] transition-colors"
+          title="Close suggestion modal">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Tabs Switcher -->
+      <div class="px-5 py-2.5 bg-[#0e131d] border-b border-[#1f2838] flex items-center gap-2 shrink-0">
+        <button id="sugTabFormBtn" type="button"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600/25 border border-blue-500/60 text-blue-300 flex items-center gap-1.5 transition-all">
+          <span>✍️ New Suggestion</span>
+        </button>
+        <button id="sugTabQueueBtn" type="button"
+          class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2b394e] flex items-center gap-1.5 transition-all">
+          <span>📋 Community Queue</span>
+          <span id="sugQueueBadge" class="text-[10px] font-mono px-1.5 py-0.2 bg-[#1a2334] rounded-full text-slate-300 border border-[#2e3e56]">6</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Submit Form Panel -->
+      <div id="sugFormPanel" class="p-5 overflow-y-auto flex-1 space-y-4">
+        <form id="suggestionForm" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label for="sugModelName" class="block text-xs font-semibold text-slate-200 mb-1.5">
+                Model / Machine Name <span class="text-rose-400">*</span>
+              </label>
+              <input type="text" id="sugModelName" required placeholder="e.g. Hydroelectric Turbine, Robotic Arm, Stethoscope"
+                class="w-full bg-[#141b27] border border-[#273449] focus:border-blue-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 outline-none transition-all" />
+            </div>
+
+            <div>
+              <label for="sugCategory" class="block text-xs font-semibold text-slate-200 mb-1.5">
+                Category <span class="text-rose-400">*</span>
+              </label>
+              <select id="sugCategory" required
+                class="w-full bg-[#141b27] border border-[#273449] focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition-all cursor-pointer">
+                <option value="Machineries">Machineries (Renewable Energy, Heavy Plant, Turbines)</option>
+                <option value="Electronics">Electronics (Computers, Mobile Devices, Displays)</option>
+                <option value="Vehicles">Vehicles (Airplanes, Automobiles, Bicycles, Marine)</option>
+                <option value="High-End Devices">High-End Devices (3D Printers, Smartwatches, Robotics)</option>
+                <option value="Medical Devices">Medical Devices (MRI, CT Scanner, Dialysis)</option>
+                <option value="Science & Concepts">Science &amp; Concepts (Biology, Anatomy, Space)</option>
+                <option value="Appliances">Appliances (Refrigerators, Washers, HVAC)</option>
+                <option value="Custom">Custom / Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="sugParts" class="block text-xs font-semibold text-slate-200 mb-1.5">
+              Key Components / Sub-assemblies to Break Down <span class="text-rose-400">*</span>
+            </label>
+            <textarea id="sugParts" required rows="3"
+              placeholder="e.g. Spiral casing, wicket gates, Francis runner blades, generator stator, rotor shaft, draft tube"
+              class="w-full bg-[#141b27] border border-[#273449] focus:border-blue-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 outline-none transition-all"></textarea>
+            <p class="text-[10px] text-slate-400 mt-1">Separate parts with commas. Our procedural CAD engine will build realistic exploded 3D models with these components.</p>
+          </div>
+
+          <div>
+            <label for="sugDescription" class="block text-xs font-semibold text-slate-200 mb-1.5">
+              Why add this? / Visualization Details
+            </label>
+            <textarea id="sugDescription" rows="2"
+              placeholder="e.g. An animated cutaway view showing fluid flow, internal gears rotating, or magnetic flux would help students and engineers."
+              class="w-full bg-[#141b27] border border-[#273449] focus:border-blue-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 outline-none transition-all"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label for="sugAuthor" class="block text-xs font-semibold text-slate-200 mb-1.5">
+                Suggested By (Name or Handle)
+              </label>
+              <input type="text" id="sugAuthor" placeholder="e.g. Sabari or Engineer_01"
+                class="w-full bg-[#141b27] border border-[#273449] focus:border-blue-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 outline-none transition-all" />
+            </div>
+
+            <div>
+              <label for="sugDifficulty" class="block text-xs font-semibold text-slate-200 mb-1.5">
+                Target Complexity
+              </label>
+              <select id="sugDifficulty"
+                class="w-full bg-[#141b27] border border-[#273449] focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition-all cursor-pointer">
+                <option value="Detailed Industrial">Detailed Industrial (5–10 parts + Animations)</option>
+                <option value="High-Fidelity Concept">High-Fidelity Concept (Interactive breakdown)</option>
+                <option value="Simple Educational">Simple Educational (Foundational essentials)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-2 flex items-center justify-between border-t border-[#1e2738]">
+            <span class="text-[11px] text-slate-400 flex items-center gap-1.5">
+              <span>🔒</span>
+              <span>Saved locally &amp; queued for procedural 3D modeling</span>
+            </span>
+            <button type="submit" id="submitSuggestionBtn"
+              class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-semibold shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-2 cursor-pointer">
+              <span>Submit Suggestion</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tab 2: Community Queue Panel -->
+      <div id="sugQueuePanel" class="p-5 overflow-y-auto flex-1 space-y-3.5 hidden">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>Active requests and recently modeled community suggestions:</span>
+          <span class="text-[11px] font-mono text-blue-400">Upvote what you want next!</span>
+        </div>
+        <div id="sugQueueList" class="space-y-2.5">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-5 py-3 border-t border-[#242e40] bg-[#131924] flex items-center justify-between">
+        <span class="text-[11px] text-slate-400">💡 Suggestions directly influence which 3D models are developed next.</span>
+        <button id="dismissSuggestionModalBtn"
+          class="px-3.5 py-1.5 rounded-lg bg-[#1a2334] hover:bg-[#232f46] text-slate-300 hover:text-white text-xs font-medium transition-colors">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-20 right-6 z-50 pointer-events-none flex flex-col gap-2"></div>
 
   <!-- Modular Application Scripts -->
   <script src="materials.js"></script>

@@ -176,6 +176,30 @@ window.getDescription = getDescription;
 function getPartCategory(part) {
   const name = (part.name || '').toLowerCase();
   if (
+    name.includes('blade') ||
+    name.includes('nacelle') ||
+    name.includes('rotor') ||
+    name.includes('hub')
+  ) {
+    return 'Aerodynamics & Turbomachinery';
+  }
+  if (
+    name.includes('photovoltaic') ||
+    name.includes('cell') ||
+    name.includes('solar') ||
+    name.includes('junction')
+  ) {
+    return 'Renewable Energy & Power';
+  }
+  if (
+    name.includes('tower') ||
+    name.includes('foundation') ||
+    name.includes('bracket') ||
+    name.includes('mount')
+  ) {
+    return 'Structural & Foundation';
+  }
+  if (
     name.includes('fuselage') ||
     name.includes('wing') ||
     name.includes('fin') ||
@@ -1851,7 +1875,7 @@ function renderSpecificationsTable() {
 // MODEL SELECTOR & CATEGORIES (EVEN CARDS WITH ICONS)
 // -------------------------------------------------------------
 function getCategoryTabs() {
-  const preferred = ['All', 'Electronics', 'Vehicles', 'Appliances', 'Science & Concepts', 'High-End Devices', 'Medical Devices'];
+  const preferred = ['All', 'Machineries', 'Electronics', 'Vehicles', 'Appliances', 'Science & Concepts', 'High-End Devices', 'Medical Devices'];
   const present = new Set();
   if (typeof OBJECTS !== 'undefined') {
     Object.values(OBJECTS).forEach((o) => {
@@ -2044,6 +2068,379 @@ function setSidebarViewMode(mode) {
       modelSec.style.flex = '1 1 100%';
     }
   }
+}
+
+// -------------------------------------------------------------
+// TOAST NOTIFICATION SYSTEM
+// -------------------------------------------------------------
+function showToast(message, type = 'success', duration = 3500) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast-notification';
+
+  let icon = '✨';
+  if (type === 'error') icon = '⚠️';
+  else if (type === 'info') icon = '💡';
+  else if (type === 'success') icon = '🎉';
+
+  toast.innerHTML = `
+    <span class="text-base leading-none">${icon}</span>
+    <span class="text-xs text-slate-100 font-medium">${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('toast-show');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('toast-show');
+    toast.classList.add('toast-hide');
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 280);
+  }, duration);
+}
+
+// -------------------------------------------------------------
+// SUGGESTION BOX & COMMUNITY QUEUE ENGINE
+// -------------------------------------------------------------
+const SUGGESTIONS_STORAGE_KEY = 'cad_3d_component_suggestions_v1';
+
+const DEFAULT_SUGGESTIONS = [
+  {
+    id: 'sug-1',
+    name: 'Wind Turbine',
+    category: 'Machineries',
+    parts: ['tower', 'nacelle', 'rotor hub', 'blades (3)', 'base foundation'],
+    description: 'Utility-scale 3-blade wind turbine generating clean electricity with rotating airfoil aerodynamics.',
+    author: 'Community Request',
+    difficulty: 'Detailed Industrial',
+    upvotes: 48,
+    status: '✨ Added to Viewer',
+    modelKey: 'wind-turbine',
+    date: '2026-09-29'
+  },
+  {
+    id: 'sug-2',
+    name: 'Solar Panel',
+    category: 'Machineries',
+    parts: ['frame', 'photovoltaic cells/panel surface', 'junction box', 'mounting bracket'],
+    description: 'Monocrystalline high-efficiency photovoltaic module angled at 30° on an aluminum/steel mounting rack.',
+    author: 'CleanEnergy CAD',
+    difficulty: 'Detailed Industrial',
+    upvotes: 42,
+    status: '✨ Added to Viewer',
+    modelKey: 'solar-panel',
+    date: '2026-09-29'
+  },
+  {
+    id: 'sug-3',
+    name: 'Hydroelectric Francis Turbine',
+    category: 'Machineries',
+    parts: ['spiral casing', 'stay vanes', 'wicket gates', 'Francis runner blades', 'generator stator', 'shaft', 'draft tube'],
+    description: 'Cutaway of a high-head hydraulic turbine converting kinetic water head pressure into electric grid power.',
+    author: 'HydroPower_Lab',
+    difficulty: 'Detailed Industrial',
+    upvotes: 31,
+    status: '⚙️ In Engineering',
+    date: '2026-09-28'
+  },
+  {
+    id: 'sug-4',
+    name: '6-Axis Industrial Robotic Arm',
+    category: 'High-End Devices',
+    parts: ['base turntable', 'shoulder actuator', 'upper arm', 'elbow pivot', 'forearm', 'wrist 3-axis gimbal', 'pneumatic parallel gripper'],
+    description: 'Precision manufacturing robot with harmonic drive servo actuators and articulated kinematics.',
+    author: 'RoboTech',
+    difficulty: 'Detailed Industrial',
+    upvotes: 36,
+    status: '⚙️ In Engineering',
+    date: '2026-09-27'
+  },
+  {
+    id: 'sug-5',
+    name: 'Acoustic Stethoscope',
+    category: 'Medical Devices',
+    parts: ['chestpiece diaphragm', 'acoustic bell', 'stem valve', 'binaural metal spring headset', 'flexible dual-lumen PVC tubing', 'silicone ear tips'],
+    description: 'Diagnostic medical acoustic instrument used for cardiac auscultation and lung sound analysis.',
+    author: 'Dr_Anatomy',
+    difficulty: 'Simple Educational',
+    upvotes: 21,
+    status: '💡 Community Queued',
+    date: '2026-09-26'
+  },
+  {
+    id: 'sug-6',
+    name: 'Quadcopter Flight Controller',
+    category: 'Electronics',
+    parts: ['STM32 microcontroller', '6-axis IMU gyro/accel', 'digital barometer', 'OSD video chip', 'micro-USB port', 'ESC power distribution pads'],
+    description: 'Autonomous multirotor autopilot flight board with inertial guidance sensors and real-time PID stabilization.',
+    author: 'AeroPilot',
+    difficulty: 'High-Fidelity Concept',
+    upvotes: 26,
+    status: '💡 Community Queued',
+    date: '2026-09-25'
+  }
+];
+
+function getSuggestionsList() {
+  try {
+    const raw = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [...DEFAULT_SUGGESTIONS];
+}
+
+function saveSuggestionsList(list) {
+  try {
+    localStorage.setItem(SUGGESTIONS_STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {}
+
+  try {
+    fetch('/api/suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(list)
+    }).catch(() => {});
+  } catch (e) {}
+}
+
+function renderSuggestionQueue() {
+  const queueList = document.getElementById('sugQueueList');
+  const badge = document.getElementById('sugQueueBadge');
+  if (!queueList) return;
+
+  const suggestions = getSuggestionsList();
+  if (badge) badge.textContent = String(suggestions.length);
+
+  queueList.innerHTML = '';
+
+  suggestions.forEach((sug) => {
+    const card = document.createElement('div');
+    card.className =
+      'sug-queue-card p-3 rounded-xl bg-[#131b28] border border-[#212e42] flex flex-col gap-2.5 shadow-sm';
+
+    let statusBadge = '';
+    if (sug.status.includes('Added')) {
+      statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 flex items-center gap-1">${sug.status}</span>`;
+    } else if (sug.status.includes('Engineering')) {
+      statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 border border-amber-500/40 text-amber-300 flex items-center gap-1">${sug.status}</span>`;
+    } else {
+      statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/15 border border-sky-500/40 text-sky-300 flex items-center gap-1">${sug.status}</span>`;
+    }
+
+    const partsList = Array.isArray(sug.parts)
+      ? sug.parts
+      : typeof sug.parts === 'string'
+      ? sug.parts.split(',').map((p) => p.trim())
+      : [];
+
+    const partsBadges = partsList
+      .slice(0, 6)
+      .map(
+        (p) =>
+          `<span class="px-1.5 py-0.5 rounded bg-[#192233] border border-[#2a394f] text-[10px] text-slate-300">${p}</span>`
+      )
+      .join('');
+
+    const moreBadge =
+      partsList.length > 6
+        ? `<span class="text-[10px] text-slate-400 font-mono">+${partsList.length - 6} more</span>`
+        : '';
+
+    let actionBtn = '';
+    if (sug.modelKey && OBJECTS[sug.modelKey]) {
+      actionBtn = `
+        <button type="button" class="inspect-sug-btn px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 text-blue-300 text-xs font-semibold flex items-center gap-1 transition-all" data-model="${sug.modelKey}">
+          <span>Inspect in 3D</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <h4 class="text-xs font-bold text-white tracking-tight">${sug.name}</h4>
+            <span class="text-[10px] text-slate-400 font-mono">(${sug.category})</span>
+          </div>
+          <p class="text-[11px] text-slate-300 mt-1 leading-snug">${sug.description || 'Community suggested 3D model breakdown.'}</p>
+        </div>
+        <div class="shrink-0 flex flex-col items-end gap-1.5">
+          ${statusBadge}
+          <button type="button" class="upvote-sug-btn px-2 py-1 rounded-lg bg-[#182334] hover:bg-[#202e44] border border-[#27374e] text-slate-300 hover:text-white text-[11px] font-semibold flex items-center gap-1.5 transition-colors" data-id="${sug.id}" title="Upvote this suggestion">
+            <span class="text-rose-400">❤️</span>
+            <span class="vote-count">${sug.upvotes || 0}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#1b2535]">
+        <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Parts:</span>
+        ${partsBadges}
+        ${moreBadge}
+      </div>
+
+      <div class="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+        <div class="flex items-center gap-2">
+          <span>By <strong>${sug.author || 'Anonymous'}</strong></span>
+          <span>•</span>
+          <span class="font-mono text-slate-400">${sug.date || 'Recent'}</span>
+        </div>
+        ${actionBtn}
+      </div>
+    `;
+
+    const upvoteBtn = card.querySelector('.upvote-sug-btn');
+    if (upvoteBtn) {
+      upvoteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playTactileClick(780);
+        upvoteSuggestion(sug.id);
+      });
+    }
+
+    const inspectBtn = card.querySelector('.inspect-sug-btn');
+    if (inspectBtn) {
+      inspectBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playTactileClick(820);
+        dismissSuggestionModal();
+        if (sug.modelKey) {
+          if (activeCategoryTab !== 'All' && OBJECTS[sug.modelKey].category !== activeCategoryTab) {
+            activeCategoryTab = OBJECTS[sug.modelKey].category;
+          }
+          switchModel(sug.modelKey);
+        }
+      });
+    }
+
+    queueList.appendChild(card);
+  });
+}
+
+function upvoteSuggestion(sugId) {
+  const suggestions = getSuggestionsList();
+  const target = suggestions.find((s) => s.id === sugId);
+  if (target) {
+    target.upvotes = (target.upvotes || 0) + 1;
+    saveSuggestionsList(suggestions);
+    renderSuggestionQueue();
+    showToast(`Upvoted "${target.name}"! (${target.upvotes} votes)`, 'info', 2000);
+  }
+}
+
+function showSuggestionModal(openToQueue = false) {
+  const modal = document.getElementById('suggestionModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  if (openToQueue) {
+    switchSuggestionTab('queue');
+  } else {
+    switchSuggestionTab('form');
+  }
+  renderSuggestionQueue();
+}
+
+function dismissSuggestionModal() {
+  const modal = document.getElementById('suggestionModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function switchSuggestionTab(tab) {
+  const formPanel = document.getElementById('sugFormPanel');
+  const queuePanel = document.getElementById('sugQueuePanel');
+  const formBtn = document.getElementById('sugTabFormBtn');
+  const queueBtn = document.getElementById('sugTabQueueBtn');
+
+  if (tab === 'form') {
+    if (formPanel) formPanel.classList.remove('hidden');
+    if (queuePanel) queuePanel.classList.add('hidden');
+
+    if (formBtn) {
+      formBtn.className =
+        'px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600/25 border border-blue-500/60 text-blue-300 flex items-center gap-1.5 transition-all';
+    }
+    if (queueBtn) {
+      queueBtn.className =
+        'px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2b394e] flex items-center gap-1.5 transition-all';
+    }
+  } else {
+    if (formPanel) formPanel.classList.add('hidden');
+    if (queuePanel) queuePanel.classList.remove('hidden');
+
+    if (queueBtn) {
+      queueBtn.className =
+        'px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600/25 border border-blue-500/60 text-blue-300 flex items-center gap-1.5 transition-all';
+    }
+    if (formBtn) {
+      formBtn.className =
+        'px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2b394e] flex items-center gap-1.5 transition-all';
+    }
+    renderSuggestionQueue();
+  }
+}
+
+function handleSuggestionSubmit(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('sugModelName');
+  const catInput = document.getElementById('sugCategory');
+  const partsInput = document.getElementById('sugParts');
+  const descInput = document.getElementById('sugDescription');
+  const authorInput = document.getElementById('sugAuthor');
+  const diffInput = document.getElementById('sugDifficulty');
+
+  const name = nameInput ? nameInput.value.trim() : '';
+  const category = catInput ? catInput.value : 'Machineries';
+  const partsRaw = partsInput ? partsInput.value.trim() : '';
+  const desc = descInput ? descInput.value.trim() : '';
+  const author = authorInput && authorInput.value.trim() ? authorInput.value.trim() : 'Anonymous Engineer';
+  const difficulty = diffInput ? diffInput.value : 'Detailed Industrial';
+
+  if (!name || !partsRaw) {
+    showToast('Please provide both a model name and key components.', 'error');
+    return;
+  }
+
+  const parts = partsRaw
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const newSug = {
+    id: 'sug-' + Date.now(),
+    name,
+    category,
+    parts,
+    description: desc || 'User suggested engineering component assembly.',
+    author,
+    difficulty,
+    upvotes: 1,
+    status: '💡 Community Queued',
+    date: new Date().toISOString().split('T')[0],
+  };
+
+  const list = getSuggestionsList();
+  list.unshift(newSug);
+  saveSuggestionsList(list);
+
+  if (nameInput) nameInput.value = '';
+  if (partsInput) partsInput.value = '';
+  if (descInput) descInput.value = '';
+
+  playTactileClick(850);
+  showToast(`🎉 Suggestion for "${name}" submitted to the CAD development queue!`, 'success', 4500);
+
+  switchSuggestionTab('queue');
 }
 
 // -------------------------------------------------------------
@@ -2298,6 +2695,44 @@ function setupAppListeners() {
     }
   });
   bindChatStarterChips();
+
+  // Suggestion Modal & Community Queue Listeners
+  document.getElementById('openSuggestionModalBtn')?.addEventListener('click', () => {
+    playTactileClick(650);
+    showSuggestionModal(false);
+  });
+  document.getElementById('sidebarSuggestBtn')?.addEventListener('click', () => {
+    playTactileClick(650);
+    showSuggestionModal(false);
+  });
+  document.getElementById('closeSuggestionModalBtn')?.addEventListener('click', () => {
+    playTactileClick(400);
+    dismissSuggestionModal();
+  });
+  document.getElementById('dismissSuggestionModalBtn')?.addEventListener('click', () => {
+    playTactileClick(400);
+    dismissSuggestionModal();
+  });
+  document.getElementById('suggestionModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'suggestionModal') {
+      dismissSuggestionModal();
+    }
+  });
+  document.getElementById('sugTabFormBtn')?.addEventListener('click', () => {
+    playTactileClick(550);
+    switchSuggestionTab('form');
+  });
+  document.getElementById('sugTabQueueBtn')?.addEventListener('click', () => {
+    playTactileClick(550);
+    switchSuggestionTab('queue');
+  });
+  document.getElementById('suggestionForm')?.addEventListener('submit', handleSuggestionSubmit);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dismissSuggestionModal();
+    }
+  });
 
   // Check and display onboarding guide on first visit
   checkFirstVisitOnboarding();

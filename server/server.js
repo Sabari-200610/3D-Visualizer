@@ -847,6 +847,42 @@ app.get('/api/chat/status', (req, res) => {
   });
 });
 
+// Community Component Suggestions Endpoints
+const SUGGESTIONS_FILE = path.join(__dirname, 'suggestions.json');
+
+app.get('/api/suggestions', (req, res) => {
+  try {
+    const fs = require('fs');
+    if (fs.existsSync(SUGGESTIONS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SUGGESTIONS_FILE, 'utf8'));
+      return res.json(data);
+    }
+  } catch (e) {}
+  res.json([]);
+});
+
+app.post('/api/suggestions', (req, res) => {
+  try {
+    const fs = require('fs');
+    const incoming = req.body;
+    let list = [];
+    if (Array.isArray(incoming)) {
+      list = incoming;
+    } else if (incoming && typeof incoming === 'object') {
+      if (fs.existsSync(SUGGESTIONS_FILE)) {
+        try {
+          list = JSON.parse(fs.readFileSync(SUGGESTIONS_FILE, 'utf8'));
+        } catch (e) {}
+      }
+      list.unshift(incoming);
+    }
+    fs.writeFileSync(SUGGESTIONS_FILE, JSON.stringify(list, null, 2));
+    res.json({ success: true, count: list.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 const PORT = parseInt(process.env.PORT, 10) || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

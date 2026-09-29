@@ -975,4 +975,100 @@ const OBJECTS = {
       },
     ],
   },
+
+  'wind-turbine': {
+    label: 'Wind Turbine',
+    category: 'Machineries',
+    icon: '🌬️',
+    viewRadius: 18.0,
+    explodeDistance: 3.5,
+    parts: [
+      {
+        id: 'foundation',
+        name: 'Base Foundation',
+        color: 0x94a3b8,
+        geometry: { type: 'cylinder', args: [2.5, 2.7, 0.6, 24] },
+        position: [0, -6.0, 0],
+        description: 'Massive reinforced concrete gravity foundation anchored deep into the ground, providing structural ballast to resist extreme aerodynamic thrust and overturning moments.'
+      },
+      {
+        id: 'tower',
+        name: 'Tower',
+        color: 0xdfe5ec,
+        geometry: { type: 'cylinder', args: [0.38, 0.72, 11.2, 24] },
+        position: [0, -0.1, 0],
+        description: 'Tapered tubular structural steel mast elevating the nacelle and rotor into higher-velocity laminar wind streams, equipped with an internal service ladder and power busbars.'
+      },
+      {
+        id: 'nacelle',
+        name: 'Nacelle',
+        color: 0xe2e8f0,
+        geometry: { type: 'box', args: [1.2, 1.1, 2.6] },
+        position: [0, 5.8, -0.3],
+        description: 'Aerodynamic machinery enclosure atop the tower housing the main drive shaft, mechanical disc brake, high-ratio step-up gearbox, generator, and yaw drive motors.'
+      },
+      {
+        id: 'rotor-hub',
+        name: 'Rotor Hub',
+        color: 0x2563eb,
+        geometry: { type: 'cylinder', args: [0.55, 0.18, 0.9, 24] },
+        position: [0, 5.8, 1.25],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'Cast-iron spinner nose cone that mounts the three aerodynamic blades, housing independent pitch mechanisms that angle blades to maximize power or feather in storm winds.'
+      },
+      {
+        id: 'blades',
+        name: 'Blades (3)',
+        color: 0xf8fafc,
+        geometry: { type: 'box', args: [0.35, 9.6, 0.2] },
+        position: [0, 5.8, 1.45],
+        description: 'Trio of aerodynamic fiberglass and carbon-fiber composite airfoil blades spaced 120° apart that harvest kinetic energy from the wind to drive the main rotor shaft.'
+      }
+    ]
+  },
+
+  'solar-panel': {
+    label: 'Solar Panel',
+    category: 'Machineries',
+    icon: '☀️',
+    viewRadius: 8.5,
+    explodeDistance: 1.8,
+    parts: [
+      {
+        id: 'mounting-bracket',
+        name: 'Mounting Bracket',
+        color: 0x64748b,
+        geometry: { type: 'box', args: [3.4, 1.3, 4.2] },
+        position: [0, -0.65, -0.2],
+        description: 'Structural galvanized steel and extruded aluminum racking system with dual triangular tilt legs angled at 30° to orient the solar module toward optimal solar zenith angle.'
+      },
+      {
+        id: 'frame',
+        name: 'Frame',
+        color: 0x334155,
+        geometry: { type: 'box', args: [3.2, 0.12, 5.0] },
+        position: [0, 0.45, 0],
+        rotation: [-Math.PI / 6, 0, 0],
+        description: 'Corrosion-resistant anodized aluminum perimeter framing that provides mechanical rigidity, thermal expansion tolerance, and IP-rated watertight seals around the photovoltaic laminate.'
+      },
+      {
+        id: 'pv-surface',
+        name: 'Photovoltaic Cells / Panel Surface',
+        color: 0x0f2b5c,
+        geometry: { type: 'box', args: [3.05, 0.04, 4.85] },
+        position: [0, 0.52, 0],
+        rotation: [-Math.PI / 6, 0, 0],
+        description: 'Matrix of 72 monocrystalline silicon photovoltaic wafer cells wired with conductive silver busbars and protected under anti-reflective, high-transmittance tempered safety glass.'
+      },
+      {
+        id: 'junction-box',
+        name: 'Junction Box',
+        color: 0x1e293b,
+        geometry: { type: 'box', args: [0.65, 0.22, 0.45] },
+        position: [0, 0.28, -0.8],
+        rotation: [-Math.PI / 6, 0, 0],
+        description: 'Weatherproof IP68 rear electrical enclosure containing bypass diodes to prevent cell hot-spots, terminating in UV-resistant DC output cables with locking MC4 solar connectors.'
+      }
+    ]
+  }
 };

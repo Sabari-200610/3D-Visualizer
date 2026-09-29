@@ -316,6 +316,47 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
   }
 
   // ---------------------------------------------------------------------------
+  // 17. WIND TURBINE (MACHINERIES / CLEAN ENERGY)
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'wind-turbine') {
+    if (partId === 'foundation') {
+      handled = true;
+      group = buildRealisticWindTurbineFoundation(part, baseMaterial);
+    } else if (partId === 'tower') {
+      handled = true;
+      group = buildRealisticWindTurbineTower(part, baseMaterial);
+    } else if (partId === 'nacelle') {
+      handled = true;
+      group = buildRealisticWindTurbineNacelle(part, baseMaterial);
+    } else if (partId === 'rotor-hub') {
+      handled = true;
+      group = buildRealisticWindTurbineRotorHub(part, baseMaterial);
+    } else if (partId === 'blades') {
+      handled = true;
+      group = buildRealisticWindTurbineBlades(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 18. SOLAR PANEL (MACHINERIES / PHOTOVOLTAIC ENERGY)
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'solar-panel') {
+    if (partId === 'mounting-bracket') {
+      handled = true;
+      group = buildRealisticSolarMount(part, baseMaterial);
+    } else if (partId === 'frame') {
+      handled = true;
+      group = buildRealisticSolarFrame(part, baseMaterial);
+    } else if (partId === 'pv-surface') {
+      handled = true;
+      group = buildRealisticSolarPanelSurface(part, baseMaterial);
+    } else if (partId === 'junction-box') {
+      handled = true;
+      group = buildRealisticSolarJunctionBox(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // FALLBACK: Enhanced beveled mesh with engineering chamfers & fasteners
   // ---------------------------------------------------------------------------
   if (!handled) {
@@ -2807,6 +2848,741 @@ function buildRealisticOpticNerve(part, baseMaterial) {
   const coreMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
   const core = new THREE.Mesh(coreGeom, coreMat);
   group.add(core);
+
+  return group;
+}
+
+// =============================================================================
+// 17. WIND TURBINE DETAILED PROCEDURAL ENGINEERING BUILDERS
+// =============================================================================
+
+function buildRealisticWindTurbineFoundation(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Heavy Octagonal Reinforced Concrete Base
+  const baseGeom = new THREE.CylinderGeometry(2.5, 2.7, 0.6, 8);
+  const concreteMat = new THREE.MeshStandardMaterial({
+    color: 0x94a3b8,
+    roughness: 0.85,
+    metalness: 0.05,
+    bumpMap: typeof makeTexturedPlasticBumpMap === 'function' ? makeTexturedPlasticBumpMap() : null,
+    bumpScale: 0.04,
+  });
+  const base = new THREE.Mesh(baseGeom, concreteMat);
+  base.castShadow = true;
+  base.receiveShadow = true;
+  group.add(base);
+
+  // Elevated Center Pedestal Ring
+  const plinthGeom = new THREE.CylinderGeometry(1.15, 1.2, 0.22, 24);
+  const plinth = new THREE.Mesh(plinthGeom, concreteMat);
+  plinth.position.y = 0.38;
+  plinth.castShadow = true;
+  plinth.receiveShadow = true;
+  group.add(plinth);
+
+  // Steel Foundation Adapter Flange Collar Ring
+  const collarGeom = new THREE.CylinderGeometry(0.96, 0.96, 0.08, 32);
+  const collarMat = getHardwareMat(0x475569, 0.35, 0.8);
+  const collar = new THREE.Mesh(collarGeom, collarMat);
+  collar.position.y = 0.52;
+  group.add(collar);
+
+  // 32 Radial High-Tensile Anchor Studs with Heavy Hex Nuts
+  const boltGeom = new THREE.CylinderGeometry(0.022, 0.022, 0.12, 6);
+  const boltMat = getHardwareMat(0xd1d5db, 0.25, 0.9);
+  const boltRadius = 0.88;
+  const boltCount = 32;
+  for (let i = 0; i < boltCount; i++) {
+    const angle = (i / boltCount) * Math.PI * 2;
+    const bolt = new THREE.Mesh(boltGeom, boltMat);
+    bolt.position.set(Math.cos(angle) * boltRadius, 0.58, Math.sin(angle) * boltRadius);
+    group.add(bolt);
+  }
+
+  // Earthing Copper Grounding Busbar Strip
+  const earthGeom = new THREE.BoxGeometry(0.06, 0.7, 0.02);
+  const earthMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8, roughness: 0.3 });
+  const earth = new THREE.Mesh(earthGeom, earthMat);
+  earth.position.set(0.92, 0.15, 0.4);
+  group.add(earth);
+
+  return group;
+}
+
+function buildRealisticWindTurbineTower(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Tapered Tubular Structural Steel Mast
+  const towerGeom = new THREE.CylinderGeometry(0.38, 0.72, 11.2, 32);
+  const towerMat = new THREE.MeshStandardMaterial({
+    color: 0xe2e8f0,
+    roughness: 0.35,
+    metalness: 0.15,
+  });
+  const tower = new THREE.Mesh(towerGeom, towerMat);
+  tower.castShadow = true;
+  tower.receiveShadow = true;
+  group.add(tower);
+
+  // Structural Section Flange Rings (Segment Bolted Joints)
+  const flangeY = [-1.8, 2.2];
+  flangeY.forEach((fy) => {
+    const t = (fy + 5.6) / 11.2;
+    const r = 0.72 - t * (0.72 - 0.38);
+    const ringGeom = new THREE.TorusGeometry(r + 0.015, 0.025, 8, 32);
+    const ringMat = getHardwareMat(0x94a3b8, 0.4, 0.6);
+    const ring = new THREE.Mesh(ringGeom, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = fy;
+    group.add(ring);
+  });
+
+  // Base Maintenance Entrance Door
+  const doorGroup = new THREE.Group();
+  doorGroup.position.set(0, -4.9, 0.68);
+
+  const doorFrameGeom = new THREE.BoxGeometry(0.42, 0.88, 0.06);
+  const doorFrameMat = getHardwareMat(0x334155, 0.4, 0.7);
+  const doorFrame = new THREE.Mesh(doorFrameGeom, doorFrameMat);
+  doorGroup.add(doorFrame);
+
+  const doorPanelGeom = new THREE.BoxGeometry(0.36, 0.8, 0.04);
+  const doorPanelMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.4, metalness: 0.3 });
+  const doorPanel = new THREE.Mesh(doorPanelGeom, doorPanelMat);
+  doorPanel.position.z = 0.02;
+  doorGroup.add(doorPanel);
+
+  // Handle & RFID Access Keypad
+  const handleGeom = new THREE.CylinderGeometry(0.012, 0.012, 0.12, 8);
+  const handle = new THREE.Mesh(handleGeom, getHardwareMat(0xf8fafc, 0.2, 0.9));
+  handle.position.set(0.12, 0.0, 0.05);
+  doorGroup.add(handle);
+
+  const keyPadGeom = new THREE.BoxGeometry(0.08, 0.12, 0.03);
+  const keyPad = new THREE.Mesh(keyPadGeom, new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 }));
+  keyPad.position.set(-0.12, 0.05, 0.05);
+  doorGroup.add(keyPad);
+
+  group.add(doorGroup);
+
+  // Louvered Air Intake Grille above door
+  const grilleGeom = new THREE.BoxGeometry(0.35, 0.22, 0.03);
+  const grilleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+  const grille = new THREE.Mesh(grilleGeom, grilleMat);
+  grille.position.set(0, -4.2, 0.65);
+  group.add(grille);
+
+  // Flashing Red Aviation Obstruction Warning Beacon
+  const beaconGeom = new THREE.CylinderGeometry(0.045, 0.045, 0.1, 16);
+  const beaconMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    emissive: 0xef4444,
+    emissiveIntensity: 1.2,
+    roughness: 0.2,
+  });
+  const beacon = new THREE.Mesh(beaconGeom, beaconMat);
+  beacon.position.set(0, 5.5, -0.4);
+  group.add(beacon);
+
+  // Flashing beacon light animator
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const pulse = Math.sin(time * 3.5) > 0.4 ? 2.5 : 0.2;
+    beaconMat.emissiveIntensity = pulse;
+  });
+
+  return group;
+}
+
+function buildRealisticWindTurbineNacelle(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Aerodynamic Fiberglass Nacelle Shell
+  const bodyGeom = new THREE.BoxGeometry(1.2, 1.1, 2.6);
+  const nacelleMat = new THREE.MeshStandardMaterial({
+    color: 0xf1f5f9,
+    roughness: 0.28,
+    metalness: 0.1,
+  });
+  const body = new THREE.Mesh(bodyGeom, nacelleMat);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  group.add(body);
+
+  // Tapered Rear Tail Fairing
+  const tailGeom = new THREE.CylinderGeometry(0.48, 0.2, 0.65, 24);
+  const tail = new THREE.Mesh(tailGeom, nacelleMat);
+  tail.rotation.x = Math.PI / 2;
+  tail.position.set(0, 0.05, -1.55);
+  group.add(tail);
+
+  // Aerospace Blue Dynamic Accent Stripe
+  const stripeGeom = new THREE.BoxGeometry(1.21, 0.12, 2.2);
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3 });
+  const stripe = new THREE.Mesh(stripeGeom, stripeMat);
+  stripe.position.set(0, -0.15, -0.1);
+  group.add(stripe);
+
+  // --- INTERNAL MACHINERY SUBASSEMBLY (Visible in Exploded & X-Ray Mode) ---
+  const machGroup = new THREE.Group();
+
+  // Low-Speed Main Rotor Shaft
+  const shaftGeom = new THREE.CylinderGeometry(0.24, 0.24, 1.0, 24);
+  const shaftMat = getHardwareMat(0x64748b, 0.3, 0.85);
+  const shaft = new THREE.Mesh(shaftGeom, shaftMat);
+  shaft.rotation.x = Math.PI / 2;
+  shaft.position.set(0, 0.1, 0.7);
+  machGroup.add(shaft);
+
+  // Main Spherical Roller Bearing Housing
+  const bearingGeom = new THREE.CylinderGeometry(0.36, 0.36, 0.35, 24);
+  const bearingMat = getHardwareMat(0x334155, 0.45, 0.75);
+  const bearing = new THREE.Mesh(bearingGeom, bearingMat);
+  bearing.rotation.x = Math.PI / 2;
+  bearing.position.set(0, 0.1, 0.7);
+  machGroup.add(bearing);
+
+  // High-Torque Emergency Disc Brake with Twin Calipers
+  const discGeom = new THREE.CylinderGeometry(0.46, 0.46, 0.04, 32);
+  const discMat = getHardwareMat(0x94a3b8, 0.2, 0.95);
+  const disc = new THREE.Mesh(discGeom, discMat);
+  disc.rotation.x = Math.PI / 2;
+  disc.position.set(0, 0.1, 0.35);
+  machGroup.add(disc);
+
+  const caliperGeom = new THREE.BoxGeometry(0.18, 0.22, 0.12);
+  const caliperMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.35 });
+  const caliper1 = new THREE.Mesh(caliperGeom, caliperMat);
+  caliper1.position.set(0.32, 0.3, 0.35);
+  machGroup.add(caliper1);
+
+  // Planetary Step-Up Gearbox (Spur/Planetary Gear Housing)
+  const gearboxGeom = new THREE.BoxGeometry(0.72, 0.72, 0.75);
+  const gearboxMat = getHardwareMat(0x1e293b, 0.5, 0.8);
+  const gearbox = new THREE.Mesh(gearboxGeom, gearboxMat);
+  gearbox.position.set(0, 0.05, 0.0);
+  machGroup.add(gearbox);
+
+  // High-Speed AC Induction Generator
+  const genGeom = new THREE.CylinderGeometry(0.36, 0.36, 0.85, 24);
+  const genMat = getHardwareMat(0x0f172a, 0.4, 0.85);
+  const gen = new THREE.Mesh(genGeom, genMat);
+  gen.rotation.x = Math.PI / 2;
+  gen.position.set(0, 0.05, -0.75);
+  machGroup.add(gen);
+
+  // Copper Stator End Winding Ring
+  const copperGeom = new THREE.TorusGeometry(0.28, 0.05, 12, 24);
+  const copperMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.3, metalness: 0.9 });
+  const copper = new THREE.Mesh(copperGeom, copperMat);
+  copper.position.set(0, 0.05, -0.4);
+  machGroup.add(copper);
+
+  group.add(machGroup);
+
+  // Rear Cooling Radiator Exhaust Louver
+  const louverGeom = new THREE.BoxGeometry(0.65, 0.45, 0.03);
+  const louverMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+  const louver = new THREE.Mesh(louverGeom, louverMat);
+  louver.position.set(0, 0.15, -1.31);
+  group.add(louver);
+
+  // Roof Meteorological Mast: Anemometer & Wind Vane
+  const mastGeom = new THREE.CylinderGeometry(0.02, 0.02, 0.38, 12);
+  const mast = new THREE.Mesh(mastGeom, getHardwareMat(0x94a3b8, 0.3, 0.8));
+  mast.position.set(0, 0.74, -0.85);
+  group.add(mast);
+
+  // Wind direction vane
+  const vaneGeom = new THREE.BoxGeometry(0.02, 0.08, 0.22);
+  const vaneMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+  const vane = new THREE.Mesh(vaneGeom, vaneMat);
+  vane.position.set(0, 0.92, -0.85);
+  group.add(vane);
+
+  // Roof Aviation Red Beacon
+  const topBeaconGeom = new THREE.SphereGeometry(0.045, 16, 16);
+  const topBeaconMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    emissive: 0xef4444,
+    emissiveIntensity: 1.5,
+  });
+  const topBeacon = new THREE.Mesh(topBeaconGeom, topBeaconMat);
+  topBeacon.position.set(0, 0.96, -0.5);
+  group.add(topBeacon);
+
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    topBeaconMat.emissiveIntensity = Math.sin(time * 3.5) > 0.4 ? 2.5 : 0.2;
+    vane.rotation.y = Math.sin(time * 0.4) * 0.15;
+  });
+
+  return group;
+}
+
+function buildRealisticWindTurbineRotorHub(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Aerodynamic Nose Spinner Cone (Bullet Profile)
+  // Local Y is aligned forward because of [Math.PI/2, 0, 0] in objects.js
+  const coneGeom = new THREE.CylinderGeometry(0.55, 0.18, 0.9, 32);
+  const hubMat = new THREE.MeshStandardMaterial({
+    color: 0x1d4ed8,
+    roughness: 0.32,
+    metalness: 0.2,
+  });
+  const cone = new THREE.Mesh(coneGeom, hubMat);
+  cone.castShadow = true;
+  group.add(cone);
+
+  // Spinner Nose Tip Dome
+  const domeGeom = new THREE.SphereGeometry(0.18, 24, 16);
+  const dome = new THREE.Mesh(domeGeom, hubMat);
+  dome.position.y = 0.45;
+  group.add(dome);
+
+  // 3 Pitch Bearing Circular Flange Rings around circumference
+  const ringGeom = new THREE.TorusGeometry(0.24, 0.03, 10, 24);
+  const ringMat = getHardwareMat(0xd1d5db, 0.25, 0.85);
+  for (let i = 0; i < 3; i++) {
+    const angle = (i / 3) * Math.PI * 2;
+    const ring = new THREE.Mesh(ringGeom, ringMat);
+    ring.position.set(Math.cos(angle) * 0.42, 0.0, Math.sin(angle) * 0.42);
+    ring.rotation.x = Math.PI / 2;
+    ring.rotation.y = angle;
+    group.add(ring);
+  }
+
+  return group;
+}
+
+function buildRealisticWindTurbineBlades(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Exactly 3 Aerodynamic Twisted Airfoil Blades Spaced 120° Apart
+  const bladeMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    roughness: 0.22,
+    metalness: 0.05,
+    clearcoat: 0.4,
+  });
+
+  const tipRedMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    roughness: 0.3,
+  });
+
+  for (let b = 0; b < 3; b++) {
+    const angle = (b / 3) * Math.PI * 2;
+    const bladeGroup = new THREE.Group();
+    bladeGroup.rotation.z = angle;
+
+    // 1. Blade Root Pitch Transition Cylinder
+    const rootGeom = new THREE.CylinderGeometry(0.18, 0.22, 0.7, 24);
+    const root = new THREE.Mesh(rootGeom, getHardwareMat(0xe2e8f0, 0.3, 0.2));
+    root.position.y = 0.45;
+    bladeGroup.add(root);
+
+    // Bolted Pitch Flange Ring
+    const flangeGeom = new THREE.TorusGeometry(0.22, 0.025, 8, 24);
+    const flange = new THREE.Mesh(flangeGeom, getHardwareMat(0x64748b, 0.3, 0.8));
+    flange.rotation.x = Math.PI / 2;
+    flange.position.y = 0.15;
+    bladeGroup.add(flange);
+
+    // 2. Main Aerodynamic Airfoil Blade (Tapered & Cambered)
+    const segments = [
+      { y1: 0.8, y2: 2.0, w1: 0.44, w2: 0.38, t1: 0.14, t2: 0.11, twist: 0.18 },
+      { y1: 2.0, y2: 3.3, w1: 0.38, w2: 0.28, t1: 0.11, t2: 0.08, twist: 0.10 },
+      { y1: 3.3, y2: 4.2, w1: 0.28, w2: 0.20, t1: 0.08, t2: 0.05, twist: 0.04 },
+      { y1: 4.2, y2: 4.8, w1: 0.20, w2: 0.10, t1: 0.05, t2: 0.03, twist: 0.01 },
+    ];
+
+    segments.forEach((seg, idx) => {
+      const len = seg.y2 - seg.y1;
+      const avgW = (seg.w1 + seg.w2) * 0.5;
+      const avgT = (seg.t1 + seg.t2) * 0.5;
+      const segGeom = new THREE.BoxGeometry(avgW, len, avgT);
+      const isTip = idx === 3;
+      const mat = isTip ? tipRedMat : bladeMat;
+      const mesh = new THREE.Mesh(segGeom, mat);
+      mesh.position.y = seg.y1 + len * 0.5;
+      mesh.rotation.y = seg.twist;
+      mesh.castShadow = true;
+      bladeGroup.add(mesh);
+    });
+
+    // Aviation Red Tip Safety Bands
+    const bandGeom = new THREE.BoxGeometry(0.24, 0.22, 0.07);
+    const band1 = new THREE.Mesh(bandGeom, tipRedMat);
+    band1.position.y = 3.8;
+    band1.rotation.y = 0.04;
+    bladeGroup.add(band1);
+
+    const band2 = new THREE.Mesh(bandGeom, tipRedMat);
+    band2.position.y = 4.3;
+    band2.rotation.y = 0.02;
+    bladeGroup.add(band2);
+
+    // Aerodynamic Winglet Tip
+    const wingletGeom = new THREE.BoxGeometry(0.08, 0.25, 0.12);
+    const winglet = new THREE.Mesh(wingletGeom, tipRedMat);
+    winglet.position.set(0.04, 4.88, 0.06);
+    winglet.rotation.x = 0.35;
+    bladeGroup.add(winglet);
+
+    group.add(bladeGroup);
+  }
+
+  // Smooth Realistic Continuous Blade Rotation
+  COMPONENT_ANIMATORS.push((delta) => {
+    group.rotation.z += delta * 0.95;
+  });
+
+  return group;
+}
+
+// =============================================================================
+// 18. SOLAR PANEL DETAILED PROCEDURAL ENGINEERING BUILDERS
+// =============================================================================
+
+function buildRealisticSolarMount(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  const galvanizedMat = new THREE.MeshStandardMaterial({
+    color: 0x94a3b8,
+    roughness: 0.45,
+    metalness: 0.75,
+    bumpMap: typeof makeBrushedMetalBumpMap === 'function' ? makeBrushedMetalBumpMap() : null,
+    bumpScale: 0.02,
+  });
+
+  // 4 Heavy Steel Anchor Footplates with Concrete Anchor Bolts
+  const footPositions = [
+    [-1.2, -0.6, 1.2],
+    [1.2, -0.6, 1.2],
+    [-1.2, -0.6, -1.2],
+    [1.2, -0.6, -1.2],
+  ];
+
+  const footGeom = new THREE.BoxGeometry(0.28, 0.05, 0.28);
+  const boltGeom = new THREE.CylinderGeometry(0.018, 0.018, 0.08, 6);
+  const boltMat = getHardwareMat(0xe2e8f0, 0.2, 0.9);
+
+  footPositions.forEach((pos) => {
+    const foot = new THREE.Mesh(footGeom, galvanizedMat);
+    foot.position.set(...pos);
+    group.add(foot);
+
+    const bolt = new THREE.Mesh(boltGeom, boltMat);
+    bolt.position.set(pos[0], pos[1] + 0.04, pos[2]);
+    group.add(bolt);
+  });
+
+  // Front Vertical Stanchions (Short Legs)
+  const frontLegGeom = new THREE.BoxGeometry(0.08, 0.52, 0.08);
+  [-1.2, 1.2].forEach((x) => {
+    const leg = new THREE.Mesh(frontLegGeom, galvanizedMat);
+    leg.position.set(x, -0.32, 1.2);
+    group.add(leg);
+  });
+
+  // Rear Vertical Stanchions (Tall Legs for 30° Tilt Angle)
+  const rearLegGeom = new THREE.BoxGeometry(0.08, 1.55, 0.08);
+  [-1.2, 1.2].forEach((x) => {
+    const leg = new THREE.Mesh(rearLegGeom, galvanizedMat);
+    leg.position.set(x, 0.2, -1.2);
+    group.add(leg);
+  });
+
+  // Diagonal Wind-Shear Cross Braces
+  const braceGeom = new THREE.BoxGeometry(0.05, 1.85, 0.05);
+  [-1.2, 1.2].forEach((x) => {
+    const brace = new THREE.Mesh(braceGeom, galvanizedMat);
+    brace.position.set(x, -0.06, 0.0);
+    brace.rotation.x = -0.56;
+    group.add(brace);
+  });
+
+  // Transverse Bottom Stabilizer Crossbars
+  const crossGeom = new THREE.BoxGeometry(2.5, 0.06, 0.06);
+  const frontCross = new THREE.Mesh(crossGeom, galvanizedMat);
+  frontCross.position.set(0, -0.55, 1.2);
+  group.add(frontCross);
+
+  const rearCross = new THREE.Mesh(crossGeom, galvanizedMat);
+  rearCross.position.set(0, -0.55, -1.2);
+  group.add(rearCross);
+
+  // Dual Longitudinal C-Channel Purlin Rails Supporting Panel (Tilted at 30°)
+  const railGeom = new THREE.BoxGeometry(0.08, 0.12, 4.4);
+  [-1.0, 1.0].forEach((x) => {
+    const rail = new THREE.Mesh(railGeom, galvanizedMat);
+    rail.position.set(x, 0.42, -0.1);
+    rail.rotation.x = -Math.PI / 6;
+    group.add(rail);
+
+    // End-clamps holding panel down
+    [-1.8, 1.8].forEach((zOffset) => {
+      const clampGeom = new THREE.BoxGeometry(0.1, 0.08, 0.12);
+      const clampMat = getHardwareMat(0x475569, 0.3, 0.85);
+      const clamp = new THREE.Mesh(clampGeom, clampMat);
+      clamp.position.set(x, 0.42 + Math.sin(Math.PI / 6) * zOffset, -0.1 + Math.cos(Math.PI / 6) * zOffset);
+      clamp.rotation.x = -Math.PI / 6;
+      group.add(clamp);
+    });
+  });
+
+  return group;
+}
+
+function buildRealisticSolarFrame(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Anodized Aluminum Perimeter Extrusions (Satin Dark Slate Finish)
+  const frameMat = new THREE.MeshStandardMaterial({
+    color: 0x334155,
+    roughness: 0.35,
+    metalness: 0.7,
+    bumpMap: typeof makeBrushedMetalBumpMap === 'function' ? makeBrushedMetalBumpMap() : null,
+    bumpScale: 0.03,
+  });
+
+  // Left & Right Structural Frame Members
+  const sideRailGeom = new THREE.BoxGeometry(0.06, 0.12, 5.0);
+  const leftRail = new THREE.Mesh(sideRailGeom, frameMat);
+  leftRail.position.x = -1.57;
+  group.add(leftRail);
+
+  const rightRail = new THREE.Mesh(sideRailGeom, frameMat);
+  rightRail.position.x = 1.57;
+  group.add(rightRail);
+
+  // Top & Bottom Structural Frame Members
+  const endRailGeom = new THREE.BoxGeometry(3.08, 0.12, 0.06);
+  const topRail = new THREE.Mesh(endRailGeom, frameMat);
+  topRail.position.z = -2.47;
+  group.add(topRail);
+
+  const bottomRail = new THREE.Mesh(endRailGeom, frameMat);
+  bottomRail.position.z = 2.47;
+  group.add(bottomRail);
+
+  // 45-Degree Miter Joint Corner Keys
+  const cornerKeyGeom = new THREE.BoxGeometry(0.08, 0.03, 0.08);
+  const keyMat = getHardwareMat(0x94a3b8, 0.3, 0.9);
+  [
+    [-1.55, -2.45],
+    [1.55, -2.45],
+    [-1.55, 2.45],
+    [1.55, 2.45],
+  ].forEach(([cx, cz]) => {
+    const key = new THREE.Mesh(cornerKeyGeom, keyMat);
+    key.position.set(cx, 0.04, cz);
+    group.add(key);
+  });
+
+  // Drainage Weep Notches along bottom rail
+  const weepGeom = new THREE.BoxGeometry(0.04, 0.02, 0.08);
+  const weepMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+  [-1.0, 0, 1.0].forEach((wx) => {
+    const weep = new THREE.Mesh(weepGeom, weepMat);
+    weep.position.set(wx, -0.05, 2.47);
+    group.add(weep);
+  });
+
+  // Laser-Etched Compliance & Ratings Label on side rail
+  const labelGeom = new THREE.BoxGeometry(0.01, 0.08, 0.45);
+  const labelMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.5 });
+  const label = new THREE.Mesh(labelGeom, labelMat);
+  label.position.set(1.602, 0.0, 0.0);
+  group.add(label);
+
+  return group;
+}
+
+function buildRealisticSolarPanelSurface(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // High-Resolution 1024x1024 Monocrystalline Photovoltaic Silicon Wafer Texture
+  const pvTexture = makeCanvasTexture((ctx, sz) => {
+    const grad = ctx.createLinearGradient(0, 0, sz, sz);
+    grad.addColorStop(0, '#07162c');
+    grad.addColorStop(0.5, '#0b1f3d');
+    grad.addColorStop(1, '#07152a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, sz, sz);
+
+    const cols = 6;
+    const rows = 12;
+    const pad = sz * 0.012;
+    const cellW = (sz - pad * 2) / cols;
+    const cellH = (sz - pad * 2) / rows;
+    const chamfer = cellW * 0.12;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = pad + c * cellW;
+        const y = pad + r * cellH;
+        const gap = 1.2;
+
+        // Monocrystalline Pseudo-Square Wafer Cell (Cut Corners)
+        ctx.fillStyle = (r + c) % 2 === 0 ? '#0b2144' : '#091c3a';
+        ctx.beginPath();
+        ctx.moveTo(x + gap + chamfer, y + gap);
+        ctx.lineTo(x + cellW - gap - chamfer, y + gap);
+        ctx.lineTo(x + cellW - gap, y + gap + chamfer);
+        ctx.lineTo(x + cellW - gap, y + cellH - gap - chamfer);
+        ctx.lineTo(x + cellW - gap - chamfer, y + cellH - gap);
+        ctx.lineTo(x + gap + chamfer, y + cellH - gap);
+        ctx.lineTo(x + gap, y + cellH - gap - chamfer);
+        ctx.lineTo(x + gap, y + gap + chamfer);
+        ctx.closePath();
+        ctx.fill();
+
+        // Horizontal fine collector fingers
+        ctx.strokeStyle = 'rgba(180, 205, 235, 0.18)';
+        ctx.lineWidth = 0.5;
+        const fingerCount = 18;
+        for (let f = 1; f < fingerCount; f++) {
+          const fy = y + (f / fingerCount) * cellH;
+          ctx.beginPath();
+          ctx.moveTo(x + gap + 1, fy);
+          ctx.lineTo(x + cellW - gap - 1, fy);
+          ctx.stroke();
+        }
+
+        // 9 Silver Multi-Busbars (MBB) per cell
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 0.9;
+        const busbarCount = 9;
+        for (let b = 1; b <= busbarCount; b++) {
+          const bx = x + (b / (busbarCount + 1)) * cellW;
+          ctx.beginPath();
+          ctx.moveTo(bx, y + gap);
+          ctx.lineTo(bx, y + cellH - gap);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Outer white EVA encapsulation border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(pad, pad, sz - pad * 2, sz - pad * 2);
+  }, 1024);
+
+  // Front Tempered Glass Physical Layer with Anti-Reflective Coating
+  const panelGeom = new THREE.BoxGeometry(3.05, 0.04, 4.85);
+  const panelMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    map: pvTexture,
+    roughness: 0.06,
+    metalness: 0.1,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.04,
+    reflectivity: 0.9,
+  });
+  const panelMesh = new THREE.Mesh(panelGeom, panelMat);
+  panelMesh.castShadow = true;
+  group.add(panelMesh);
+
+  // White Tedlar/PET Backsheet on rear
+  const backsheetGeom = new THREE.PlaneGeometry(3.03, 4.83);
+  const backsheetMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    roughness: 0.7,
+    side: THREE.BackSide,
+  });
+  const backsheet = new THREE.Mesh(backsheetGeom, backsheetMat);
+  backsheet.rotation.x = Math.PI / 2;
+  backsheet.position.y = -0.021;
+  group.add(backsheet);
+
+  return group;
+}
+
+function buildRealisticSolarJunctionBox(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Weatherproof IP68 Polycarbonate Enclosure Box
+  const boxGeom = new THREE.BoxGeometry(0.65, 0.16, 0.45);
+  const boxMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.5,
+    metalness: 0.2,
+  });
+  const box = new THREE.Mesh(boxGeom, boxMat);
+  box.castShadow = true;
+  group.add(box);
+
+  // External Heat Dissipation Cooling Ribs
+  const ribGeom = new THREE.BoxGeometry(0.55, 0.03, 0.02);
+  const ribMat = getHardwareMat(0x0f172a, 0.4, 0.5);
+  for (let r = -0.15; r <= 0.15; r += 0.06) {
+    const rib = new THREE.Mesh(ribGeom, ribMat);
+    rib.position.set(0, -0.09, r);
+    group.add(rib);
+  }
+
+  // 3 Schottky Bypass Diodes inside housing
+  const diodeGeom = new THREE.CylinderGeometry(0.025, 0.025, 0.12, 12);
+  const diodeMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3, metalness: 0.8 });
+  [-0.14, 0.0, 0.14].forEach((dx) => {
+    const diode = new THREE.Mesh(diodeGeom, diodeMat);
+    diode.rotation.z = Math.PI / 2;
+    diode.position.set(dx, 0.02, 0.0);
+    group.add(diode);
+  });
+
+  // Weather-Tight Cable Gland Compression Nuts
+  const glandGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.08, 16);
+  const glandMat = getHardwareMat(0x334155, 0.3, 0.7);
+
+  const leftGland = new THREE.Mesh(glandGeom, glandMat);
+  leftGland.position.set(-0.16, 0.0, 0.25);
+  leftGland.rotation.x = Math.PI / 2;
+  group.add(leftGland);
+
+  const rightGland = new THREE.Mesh(glandGeom, glandMat);
+  rightGland.position.set(0.16, 0.0, 0.25);
+  rightGland.rotation.x = Math.PI / 2;
+  group.add(rightGland);
+
+  // Positive DC Solar Cable (Red) and Negative DC Cable (Black)
+  const cableGeom = new THREE.CylinderGeometry(0.022, 0.022, 0.65, 12);
+  const redCableMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.6 });
+  const blackCableMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+
+  const posCable = new THREE.Mesh(cableGeom, redCableMat);
+  posCable.position.set(-0.16, -0.04, 0.58);
+  posCable.rotation.x = 0.4;
+  group.add(posCable);
+
+  const negCable = new THREE.Mesh(cableGeom, blackCableMat);
+  negCable.position.set(0.16, -0.04, 0.58);
+  negCable.rotation.x = 0.4;
+  group.add(negCable);
+
+  // Authentic Male & Female MC4 Snap-Lock Solar Connectors
+  const mc4Geom = new THREE.CylinderGeometry(0.04, 0.04, 0.22, 16);
+  const mc4Mat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.4 });
+
+  const posMC4 = new THREE.Mesh(mc4Geom, mc4Mat);
+  posMC4.position.set(-0.16, -0.16, 0.86);
+  posMC4.rotation.x = 0.4;
+  group.add(posMC4);
+
+  const negMC4 = new THREE.Mesh(mc4Geom, mc4Mat);
+  negMC4.position.set(0.16, -0.16, 0.86);
+  negMC4.rotation.x = 0.4;
+  group.add(negMC4);
+
+  // Polarity ring on positive connector
+  const polRingGeom = new THREE.TorusGeometry(0.042, 0.008, 8, 16);
+  const polRing = new THREE.Mesh(polRingGeom, redCableMat);
+  polRing.position.set(-0.16, -0.16, 0.86);
+  polRing.rotation.x = 0.4;
+  group.add(polRing);
 
   return group;
 }
