@@ -176,6 +176,23 @@ window.getDescription = getDescription;
 function getPartCategory(part) {
   const name = (part.name || '').toLowerCase();
   if (
+    name.includes('driver') ||
+    name.includes('speaker') ||
+    name.includes('transducer') ||
+    name.includes('audio')
+  ) {
+    return 'Acoustics & Transducers';
+  }
+  if (name.includes('crown') || name.includes('dial')) {
+    return 'Kinematics & Micro-Mechanics';
+  }
+  if (name.includes('sensor') || name.includes('heart-rate') || name.includes('biometric')) {
+    return 'Optics & Bio-Sensors';
+  }
+  if (name.includes('strap') || name.includes('band')) {
+    return 'Ergonomics & Fasteners';
+  }
+  if (
     name.includes('blade') ||
     name.includes('nacelle') ||
     name.includes('rotor') ||
@@ -290,7 +307,6 @@ function getPartCategory(part) {
     name.includes('motor') ||
     name.includes('stepper') ||
     name.includes('extruder') ||
-    name.includes('crown') ||
     name.includes('gear') ||
     name.includes('pedal') ||
     name.includes('chain') ||
@@ -329,6 +345,16 @@ function formatPartDimensions(geomDef) {
 function getPartFinish(part) {
   const n = (part.name || '').toLowerCase();
   const mt = part.materialType || '';
+  if (n.includes('strap') || n.includes('band'))
+    return 'Fluoroelastomer Sports Polymer';
+  if (n.includes('shell') || n.includes('earbud'))
+    return 'High-Gloss Ceramic Polycarbonate';
+  if (n.includes('driver') || n.includes('diaphragm'))
+    return 'Titanium Composite & Neodymium N52';
+  if (n.includes('crown') || n.includes('titanium'))
+    return 'Aerospace Grade-5 Titanium';
+  if (n.includes('sensor') || n.includes('ceramic'))
+    return 'Zirconia Ceramic & Sapphire Glass';
   if (mt === 'metal' || n.includes('heatsink') || n.includes('bracket') || n.includes('stand'))
     return 'Anodized 6061-T6 Aluminum';
   if (mt === 'pcb' || n.includes('motherboard') || n.includes('mainboard'))
@@ -1875,7 +1901,7 @@ function renderSpecificationsTable() {
 // MODEL SELECTOR & CATEGORIES (EVEN CARDS WITH ICONS)
 // -------------------------------------------------------------
 function getCategoryTabs() {
-  const preferred = ['All', 'Machineries', 'Electronics', 'Vehicles', 'Appliances', 'Science & Concepts', 'High-End Devices', 'Medical Devices'];
+  const preferred = ['All', 'High-End Devices', 'Machineries', 'Electronics', 'Vehicles', 'Appliances', 'Science & Concepts', 'Medical Devices'];
   const present = new Set();
   if (typeof OBJECTS !== 'undefined') {
     Object.values(OBJECTS).forEach((o) => {

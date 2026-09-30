@@ -761,6 +761,57 @@ const OBJECTS = {
     ],
   },
 
+  'wireless-earbuds': {
+    label: 'Wireless Earbuds',
+    category: 'High-End Devices',
+    icon: '🎧',
+    viewRadius: 5.0,
+    explodeDistance: 1.35,
+    parts: [
+      {
+        id: 'shell-left',
+        name: 'Left Earbud Shell',
+        color: 0xf8fafc,
+        geometry: { type: 'sphere', args: [0.42, 24, 24] },
+        position: [-0.95, 0.45, 0.25],
+        description: 'Acoustic in-ear enclosure housing the left sound canal, dual beamforming microphones, capacitive touch stem, and medical-grade silicone ear tip.'
+      },
+      {
+        id: 'shell-right',
+        name: 'Right Earbud Shell',
+        color: 0xf8fafc,
+        geometry: { type: 'sphere', args: [0.42, 24, 24] },
+        position: [0.95, 0.45, 0.25],
+        description: 'Mirrored acoustic in-ear shell housing the right sound chamber, proximity sensor, capacitive force sensor for gesture controls, and gold charging contacts.'
+      },
+      {
+        id: 'case',
+        name: 'Charging Case',
+        color: 0xe2e8f0,
+        geometry: { type: 'box', args: [2.5, 1.8, 1.1] },
+        position: [0, -0.65, -0.1],
+        description: 'Precision magnetic charging cradle with spring-tensioned clamshell lid, USB-C port, wireless induction charging coil, and multi-color status LED.'
+      },
+      {
+        id: 'battery',
+        name: 'Lithium Battery',
+        color: 0x475569,
+        geometry: { type: 'box', args: [1.8, 0.9, 0.4] },
+        position: [0, -0.85, -0.12],
+        description: 'High-density 520mAh lithium-polymer pouch cell providing up to 30 hours of reserve listening power with integrated protection circuit module.'
+      },
+      {
+        id: 'driver',
+        name: 'Speaker Driver',
+        color: 0xd97706,
+        geometry: { type: 'cylinder', args: [0.32, 0.32, 0.18, 24] },
+        position: [0, 0.75, 0.55],
+        rotation: [Math.PI / 2, 0, 0],
+        description: 'Custom 11mm high-excursion dynamic audio transducer with N52 neodymium magnet, pure copper voice coil, and ultra-thin titanium composite diaphragm.'
+      },
+    ],
+  },
+
   'printer-3d': {
     label: '3D Printer',
     category: 'High-End Devices',

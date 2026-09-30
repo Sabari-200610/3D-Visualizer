@@ -230,9 +230,34 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
     } else if (partId === 'strap') {
       handled = true;
       group = buildRealisticSmartwatchStrap(part, baseMaterial);
+    } else if (partId === 'battery') {
+      handled = true;
+      group = buildRealisticSmartwatchBattery(part, baseMaterial);
     } else if (partId === 'sensor') {
       handled = true;
       group = buildRealisticSmartwatchSensor(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // WIRELESS EARBUDS
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'wireless-earbuds' || objectId === 'earbuds') {
+    if (partId === 'shell-left' || partId === 'earbud-shell-left' || partId === 'shell-1') {
+      handled = true;
+      group = buildRealisticEarbudShell(part, baseMaterial, 'left');
+    } else if (partId === 'shell-right' || partId === 'earbud-shell-right' || partId === 'shell-2') {
+      handled = true;
+      group = buildRealisticEarbudShell(part, baseMaterial, 'right');
+    } else if (partId === 'case' || partId === 'charging-case') {
+      handled = true;
+      group = buildRealisticEarbudChargingCase(part, baseMaterial);
+    } else if (partId === 'battery' || partId === 'case-battery') {
+      handled = true;
+      group = buildRealisticEarbudBattery(part, baseMaterial);
+    } else if (partId === 'driver' || partId === 'speaker-driver') {
+      handled = true;
+      group = buildRealisticEarbudSpeakerDriver(part, baseMaterial);
     }
   }
 
@@ -2067,33 +2092,104 @@ function buildRealisticAirplaneLandingGear(part, baseMaterial) {
 }
 
 // -----------------------------------------------------------------------------
-// 16. SMARTWATCH PROCEDURAL COMPONENTS
+// 16. SMARTWATCH PROCEDURAL COMPONENTS (ENHANCED & REALISTIC)
 // -----------------------------------------------------------------------------
 function buildRealisticSmartwatchCase(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Titanium Watch Case Body
-  const caseGeom = new THREE.BoxGeometry(1.8, 2.2, 0.45);
-  const caseMesh = new THREE.Mesh(caseGeom, baseMaterial);
+  // Aerospace-Grade Titanium Unibody Enclosure with smooth curved corners
+  const w = 1.8, h = 2.2, d = 0.45;
+  const radius = 0.32;
+  const shape = new THREE.Shape();
+  const hw = w / 2 - radius;
+  const hh = h / 2 - radius;
+  shape.absarc(hw, hh, radius, 0, Math.PI / 2, false);
+  shape.absarc(-hw, hh, radius, Math.PI / 2, Math.PI, false);
+  shape.absarc(-hw, -hh, radius, Math.PI, Math.PI * 1.5, false);
+  shape.absarc(hw, -hh, radius, Math.PI * 1.5, Math.PI * 2, false);
+
+  const extrudeSettings = {
+    depth: d,
+    bevelEnabled: true,
+    bevelSegments: 3,
+    steps: 1,
+    bevelSize: 0.05,
+    bevelThickness: 0.04,
+    curveSegments: 16,
+  };
+  const caseGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  caseGeom.center();
+
+  const titaniumMat = new THREE.MeshStandardMaterial({
+    color: 0x475569,
+    roughness: 0.28,
+    metalness: 0.88,
+  });
+  const caseMesh = new THREE.Mesh(caseGeom, titaniumMat);
   caseMesh.castShadow = true;
+  caseMesh.receiveShadow = true;
   group.add(caseMesh);
 
-  // Left Side Acoustic Speaker Ports
-  for (let s = -0.3; s <= 0.3; s += 0.15) {
-    const slitGeom = new THREE.BoxGeometry(0.04, 0.08, 0.12);
-    const slitMat = getHardwareMat(0x0f172a, 0.4, 0.7);
+  // Top Screen Recess Bezel Ring
+  const bezelGeom = new THREE.BoxGeometry(1.64, 2.04, 0.03);
+  const bezelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.6 });
+  const bezel = new THREE.Mesh(bezelGeom, bezelMat);
+  bezel.position.z = 0.23;
+  group.add(bezel);
+
+  // Left Side Acoustic Speaker Slits with fine dark acoustic grille
+  for (let s = -0.32; s <= 0.32; s += 0.16) {
+    const slitGeom = new THREE.BoxGeometry(0.06, 0.09, 0.14);
+    const slitMat = getHardwareMat(0x090d16, 0.3, 0.9);
     const slit = new THREE.Mesh(slitGeom, slitMat);
-    slit.position.set(-0.91, s, 0);
+    slit.position.set(-0.95, s, 0);
     group.add(slit);
   }
 
-  // Right Side Microphone Pinhole
-  const micGeom = new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12);
-  const micMat = getHardwareMat(0x0f172a, 0.4, 0.7);
+  // Right Side Microphone Pinhole & Digital Crown Protective Well
+  const micGeom = new THREE.CylinderGeometry(0.025, 0.025, 0.08, 16);
+  const micMat = getHardwareMat(0x0f172a, 0.3, 0.8);
   const mic = new THREE.Mesh(micGeom, micMat);
   mic.rotation.z = Math.PI / 2;
-  mic.position.set(0.91, -0.3, 0);
+  mic.position.set(0.94, -0.38, 0);
   group.add(mic);
+
+  // Right Side Secondary Flush Side Button (SOS / App Switcher)
+  const sideBtnGeom = new THREE.BoxGeometry(0.06, 0.55, 0.14);
+  const sideBtnMat = getHardwareMat(0x64748b, 0.22, 0.92);
+  const sideBtn = new THREE.Mesh(sideBtnGeom, sideBtnMat);
+  sideBtn.position.set(0.94, -0.1, 0);
+  group.add(sideBtn);
+
+  // Underside Quick-Release Strap Latches (Top and Bottom)
+  [-1.02, 1.02].forEach((y) => {
+    const latchGeom = new THREE.BoxGeometry(0.55, 0.08, 0.06);
+    const latchMat = getHardwareMat(0x94a3b8, 0.2, 0.9);
+    const latch = new THREE.Mesh(latchGeom, latchMat);
+    latch.position.set(0, y, -0.22);
+    group.add(latch);
+  });
+
+  // Rear Ceramic Ring Seat with Engraved Spec Text
+  const ringGeom = new THREE.RingGeometry(0.58, 0.72, 32);
+  const ringMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.15,
+    metalness: 0.4,
+    side: THREE.DoubleSide,
+  });
+  const ring = new THREE.Mesh(ringGeom, ringMat);
+  ring.position.z = -0.245;
+  group.add(ring);
+
+  // Antenna Isolation Seams (Ceramic Molded Inlays)
+  [-0.75, 0.75].forEach((y) => {
+    const seamGeom = new THREE.BoxGeometry(1.86, 0.02, 0.46);
+    const seamMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+    const seam = new THREE.Mesh(seamGeom, seamMat);
+    seam.position.set(0, y, 0);
+    group.add(seam);
+  });
 
   return group;
 }
@@ -2106,81 +2202,187 @@ function buildRealisticSmartwatchDisplay(part, baseMaterial) {
   canvas.height = 512;
   const ctx = canvas.getContext('2d');
   const uiTexture = new THREE.CanvasTexture(canvas);
+  uiTexture.anisotropy = 4;
+
+  let ecgHistory = [];
+  for (let i = 0; i < 60; i++) ecgHistory.push(0);
 
   function drawWatchFace(timeSec) {
-    ctx.fillStyle = '#070a12';
+    ctx.fillStyle = '#060913';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Digital Time Readout
+    // Subtle OLED Hexagonal Micro-Grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < 512; x += 32) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 512);
+      ctx.stroke();
+    }
+    for (let y = 0; y < 512; y += 32) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(512, y);
+      ctx.stroke();
+    }
+
+    // Top Header: Location & Weather
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('⛅ 24°C CUPERTINO', 52, 60);
+
+    // Digital Time Readout with Animated Seconds
+    const now = new Date();
+    const hrs = String(now.getHours()).padStart(2, '0');
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    const secs = String(now.getSeconds()).padStart(2, '0');
+    const timeStr = `${hrs}:${mins}`;
+
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 96px monospace';
+    ctx.font = 'bold 92px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('10:09', 256, 185);
+    ctx.fillText(timeStr, 230, 160);
+
+    // Seconds Ticking
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 36px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(secs, 360, 125);
 
     // Date Subtitle
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '500 28px sans-serif';
-    ctx.fillText('MON 28 SEP', 256, 230);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 24px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('MON 28 SEP • ACTIVITY', 256, 205);
 
     // Activity Rings (Move, Exercise, Stand)
-    const cx = 256, cy = 330;
+    const cx = 145, cy = 320;
     const rings = [
-      { r: 85, color: '#ef4444', pct: 0.82 },
-      { r: 64, color: '#22c55e', pct: 0.65 },
-      { r: 43, color: '#38bdf8', pct: 0.90 },
+      { r: 76, color: '#ef4444', pct: 0.85, width: 13 },
+      { r: 58, color: '#22c55e', pct: 0.68, width: 13 },
+      { r: 40, color: '#06b6d4', pct: 0.92, width: 13 },
     ];
     rings.forEach((ring) => {
       ctx.beginPath();
       ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
-      ctx.strokeStyle = '#1e293b';
-      ctx.lineWidth = 13;
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = ring.width;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.arc(cx, cy, ring.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ring.pct);
       ctx.strokeStyle = ring.color;
-      ctx.lineWidth = 13;
+      ctx.lineWidth = ring.width;
       ctx.lineCap = 'round';
       ctx.stroke();
     });
 
-    // Heart Rate & Battery info with Pulsing Heart Icon
-    const pulseScale = 1.0 + Math.sin(timeSec * 4.0) * 0.15;
+    // Real-Time Animated ECG Waveform Box
+    const ecgX = 250, ecgY = 255, ecgW = 210, ecgH = 130;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+    ctx.beginPath();
+    ctx.roundRect(ecgX, ecgY, ecgW, ecgH, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // ECG Title
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '700 16px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('ECG RHYTHM', ecgX + 14, ecgY + 26);
+
+    // Compute dynamic ECG point
+    const tCycle = (timeSec * 2.2) % 1.0;
+    let waveVal = 0;
+    if (tCycle < 0.15) waveVal = Math.sin((tCycle / 0.15) * Math.PI) * 0.15;
+    else if (tCycle < 0.2) waveVal = 0;
+    else if (tCycle < 0.23) waveVal = -0.2;
+    else if (tCycle < 0.28) waveVal = 1.0; // QRS peak
+    else if (tCycle < 0.33) waveVal = -0.35;
+    else if (tCycle < 0.42) waveVal = 0;
+    else if (tCycle < 0.58) waveVal = Math.sin(((tCycle - 0.42) / 0.16) * Math.PI) * 0.3; // T wave
+    else waveVal = 0;
+
+    ecgHistory.shift();
+    ecgHistory.push(waveVal);
+
+    // Draw ECG Path
+    ctx.beginPath();
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    for (let p = 0; p < ecgHistory.length; p++) {
+      const px = ecgX + 12 + (p / (ecgHistory.length - 1)) * (ecgW - 24);
+      const py = ecgY + 75 - ecgHistory[p] * 38;
+      if (p === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // ECG Cursor Pulse Dot
+    const lastPx = ecgX + ecgW - 12;
+    const lastPy = ecgY + 75 - ecgHistory[ecgHistory.length - 1] * 38;
+    ctx.beginPath();
+    ctx.arc(lastPx, lastPy, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#4ade80';
+    ctx.fill();
+
+    // Heart Rate & Battery Bottom Readout
+    const pulseScale = 1.0 + Math.sin(timeSec * 4.6) * 0.16;
     ctx.fillStyle = '#ef4444';
-    ctx.font = `${Math.round(26 * pulseScale)}px sans-serif`;
-    ctx.fillText('♥ 74 BPM', 140, 465);
+    ctx.font = `bold ${Math.round(26 * pulseScale)}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText('♥ 74 BPM', 60, 465);
 
     ctx.fillStyle = '#22c55e';
-    ctx.font = '26px sans-serif';
-    ctx.fillText('⚡ 96%', 370, 465);
+    ctx.font = 'bold 26px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('⚡ 96%', 450, 465);
 
     uiTexture.needsUpdate = true;
   }
 
   drawWatchFace(0);
 
-  const screenGeom = new THREE.BoxGeometry(1.55, 1.95, 0.05);
+  // 2.5D Curved-Edge Sapphire Crystal Glass Screen
+  const wGlass = 1.56, hGlass = 1.96, rGlass = 0.26;
+  const glassShape = new THREE.Shape();
+  const hwG = wGlass / 2 - rGlass;
+  const hhG = hGlass / 2 - rGlass;
+  glassShape.absarc(hwG, hhG, rGlass, 0, Math.PI / 2, false);
+  glassShape.absarc(-hwG, hhG, rGlass, Math.PI / 2, Math.PI, false);
+  glassShape.absarc(-hwG, -hhG, rGlass, Math.PI, Math.PI * 1.5, false);
+  glassShape.absarc(hwG, -hhG, rGlass, Math.PI * 1.5, Math.PI * 2, false);
+
+  const glassGeom = new THREE.ExtrudeGeometry(glassShape, {
+    depth: 0.05,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.02,
+    bevelThickness: 0.02,
+  });
+  glassGeom.center();
+
   const screenMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: uiTexture,
-    roughness: 0.15,
+    roughness: 0.1,
     metalness: 0.05,
-    emissive: 0x1e293b,
-    emissiveIntensity: 0.35,
+    emissive: 0x0f172a,
+    emissiveIntensity: 0.45,
   });
-  const screen = new THREE.Mesh(screenGeom, screenMat);
+  const screen = new THREE.Mesh(glassGeom, screenMat);
+  screen.position.z = 0.25;
   group.add(screen);
-
-  // Bezel Border
-  const bezelGeom = new THREE.BoxGeometry(1.58, 1.98, 0.04);
-  const wireGeom = new THREE.EdgesGeometry(bezelGeom);
-  const bezelMat = new THREE.LineBasicMaterial({ color: 0x475569 });
-  const bezel = new THREE.LineSegments(wireGeom, bezelMat);
-  group.add(bezel);
 
   let lastTimeUpdate = 0;
   COMPONENT_ANIMATORS.push((delta, time) => {
-    if (time - lastTimeUpdate > 0.1) {
+    if (time - lastTimeUpdate > 0.06) {
       lastTimeUpdate = time;
       drawWatchFace(time);
     }
@@ -2192,20 +2394,60 @@ function buildRealisticSmartwatchDisplay(part, baseMaterial) {
 function buildRealisticSmartwatchCrown(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Knurled Digital Crown
-  const crownGeom = new THREE.CylinderGeometry(0.22, 0.22, 0.26, 24);
-  const crownMat = getHardwareMat(0xd4d4d8, 0.25, 0.85);
-  const crown = new THREE.Mesh(crownGeom, crownMat);
-  crown.rotation.z = Math.PI / 2;
-  group.add(crown);
+  // Aerospace Titanium Main Dial Body
+  const crownGeom = new THREE.CylinderGeometry(0.22, 0.22, 0.24, 32);
+  const crownMat = getHardwareMat(0xd4d4d8, 0.22, 0.9);
+  const crownMesh = new THREE.Mesh(crownGeom, crownMat);
+  crownMesh.rotation.z = Math.PI / 2;
+  group.add(crownMesh);
 
-  // Signature Accent Ring (International Orange)
-  const ringGeom = new THREE.TorusGeometry(0.225, 0.02, 12, 24);
-  const ringMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
+  // Knurled Grip Splines / Teeth (28 micro flutes around perimeter)
+  const splineCount = 28;
+  for (let i = 0; i < splineCount; i++) {
+    const angle = (i / splineCount) * Math.PI * 2;
+    const toothGeom = new THREE.BoxGeometry(0.24, 0.02, 0.025);
+    const toothMat = getHardwareMat(0xa1a1aa, 0.28, 0.92);
+    const tooth = new THREE.Mesh(toothGeom, toothMat);
+    tooth.position.set(0, Math.cos(angle) * 0.22, Math.sin(angle) * 0.22);
+    group.add(tooth);
+  }
+
+  // Signature Accent Ring (International Safety Orange Ceramic Inset)
+  const ringGeom = new THREE.TorusGeometry(0.225, 0.018, 12, 32);
+  const ringMat = new THREE.MeshStandardMaterial({
+    color: 0xf97316,
+    roughness: 0.25,
+    metalness: 0.4,
+  });
   const ring = new THREE.Mesh(ringGeom, ringMat);
   ring.rotation.y = Math.PI / 2;
-  ring.position.x = 0.05;
+  ring.position.x = 0.04;
   group.add(ring);
+
+  // Concentric Spun-Metal Outer Face
+  const faceGeom = new THREE.CircleGeometry(0.21, 32);
+  const faceMat = new THREE.MeshStandardMaterial({
+    color: 0xe4e4e7,
+    roughness: 0.18,
+    metalness: 0.95,
+  });
+  const face = new THREE.Mesh(faceGeom, faceMat);
+  face.rotation.y = Math.PI / 2;
+  face.position.x = 0.121;
+  group.add(face);
+
+  // Internal Stainless Steel Encoder Axis Shaft
+  const shaftGeom = new THREE.CylinderGeometry(0.06, 0.06, 0.18, 16);
+  const shaftMat = getHardwareMat(0x71717a, 0.2, 0.95);
+  const shaft = new THREE.Mesh(shaftGeom, shaftMat);
+  shaft.rotation.z = Math.PI / 2;
+  shaft.position.x = -0.15;
+  group.add(shaft);
+
+  // Micro-rotation animator for active crown interaction
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    crownMesh.rotation.y += delta * 0.8;
+  });
 
   return group;
 }
@@ -2213,20 +2455,147 @@ function buildRealisticSmartwatchCrown(part, baseMaterial) {
 function buildRealisticSmartwatchStrap(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Dual Sports Band Straps (Top and Bottom)
-  const strapGeom = new THREE.BoxGeometry(1.4, 4.4, 0.16);
-  const strap = new THREE.Mesh(strapGeom, baseMaterial);
-  group.add(strap);
+  const strapMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.65,
+    metalness: 0.08,
+  });
 
-  // Ventilation Holes
-  [-1.4, -1.1, -0.8, 0.8, 1.1, 1.4].forEach((y) => {
-    const holeGeom = new THREE.CylinderGeometry(0.08, 0.08, 0.18, 16);
-    const holeMat = getHardwareMat(0x0f172a, 0.5, 0.7);
+  // Top Strap (Lug to upper wrist curve)
+  const topStrapGeom = new THREE.BoxGeometry(1.38, 2.1, 0.16);
+  const topStrap = new THREE.Mesh(topStrapGeom, strapMat);
+  topStrap.position.set(0, 1.25, -0.05);
+  group.add(topStrap);
+
+  // Bottom Strap (Lug to lower wrist curve with adjustment perforations)
+  const botStrapGeom = new THREE.BoxGeometry(1.38, 2.3, 0.16);
+  const botStrap = new THREE.Mesh(botStrapGeom, strapMat);
+  botStrap.position.set(0, -1.35, -0.05);
+  group.add(botStrap);
+
+  // Stainless Steel Quick-Release Lug Connectors that snap into case
+  [-0.22, 2.32].forEach((y, idx) => {
+    const lugY = idx === 0 ? -0.22 : 0.22;
+    const lugGeom = new THREE.BoxGeometry(1.42, 0.12, 0.18);
+    const lugMat = getHardwareMat(0x94a3b8, 0.2, 0.92);
+    const lug = new THREE.Mesh(lugGeom, lugMat);
+    lug.position.set(0, idx === 0 ? -0.25 : 0.25, -0.05);
+    group.add(lug);
+  });
+
+  // Oval Breathability / Adjustment Perforations on Lower Strap
+  [-0.7, -1.0, -1.3, -1.6, -1.9, -2.2].forEach((y) => {
+    const holeGeom = new THREE.CylinderGeometry(0.08, 0.08, 0.19, 16);
+    const holeMat = getHardwareMat(0x0a0f1d, 0.4, 0.7);
     const hole = new THREE.Mesh(holeGeom, holeMat);
     hole.rotation.x = Math.PI / 2;
-    hole.position.set(0, y, 0);
+    hole.position.set(0, y, -0.05);
     group.add(hole);
   });
+
+  // Stainless Steel Pin-and-Tuck Closure Stud
+  const pinGeom = new THREE.CylinderGeometry(0.12, 0.12, 0.18, 20);
+  const pinMat = getHardwareMat(0xe2e8f0, 0.18, 0.95);
+  const pin = new THREE.Mesh(pinGeom, pinMat);
+  pin.rotation.x = Math.PI / 2;
+  pin.position.set(0, 1.8, 0.06);
+  group.add(pin);
+
+  return group;
+}
+
+function buildRealisticSmartwatchBattery(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Silver Aluminum Vacuum-Sealed Pouch Cell Body
+  const pouchGeom = new THREE.BoxGeometry(1.28, 1.42, 0.11);
+  const pouchMat = new THREE.MeshStandardMaterial({
+    color: 0xcfd8dc,
+    roughness: 0.35,
+    metalness: 0.85,
+  });
+  const pouch = new THREE.Mesh(pouchGeom, pouchMat);
+  pouch.castShadow = true;
+  group.add(pouch);
+
+  // Sealed Crimped Foil Margin Flanges (Top, Bottom, Sides)
+  const flangeMat = new THREE.MeshStandardMaterial({ color: 0xb0bec5, roughness: 0.4, metalness: 0.8 });
+  const flangeTopGeom = new THREE.BoxGeometry(1.36, 0.05, 0.02);
+  const flangeTop = new THREE.Mesh(flangeTopGeom, flangeMat);
+  flangeTop.position.set(0, 0.73, 0);
+  group.add(flangeTop);
+
+  const flangeBotGeom = new THREE.BoxGeometry(1.36, 0.05, 0.02);
+  const flangeBot = new THREE.Mesh(flangeBotGeom, flangeMat);
+  flangeBot.position.set(0, -0.73, 0);
+  group.add(flangeBot);
+
+  // Amber Kapton Polyimide Insulating Safety Tape at Top Edge
+  const kaptonGeom = new THREE.BoxGeometry(1.3, 0.18, 0.12);
+  const kaptonMat = new THREE.MeshStandardMaterial({
+    color: 0xd97706,
+    roughness: 0.3,
+    metalness: 0.2,
+    transparent: true,
+    opacity: 0.88,
+  });
+  const kapton = new THREE.Mesh(kaptonGeom, kaptonMat);
+  kapton.position.set(0, 0.62, 0);
+  group.add(kapton);
+
+  // Battery Protection Circuit Module (PCM / BMS PCB)
+  const pcmGeom = new THREE.BoxGeometry(1.15, 0.1, 0.04);
+  const pcmMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.5, metalness: 0.3 });
+  const pcm = new THREE.Mesh(pcmGeom, pcmMat);
+  pcm.position.set(0, 0.63, 0.065);
+  group.add(pcm);
+
+  // Surface-Mount Fuel Gauge IC & Dual MOSFETs
+  [-0.3, 0.1, 0.35].forEach((x) => {
+    const icGeom = new THREE.BoxGeometry(0.12, 0.06, 0.03);
+    const icMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.5 });
+    const ic = new THREE.Mesh(icGeom, icMat);
+    ic.position.set(x, 0.63, 0.088);
+    group.add(ic);
+  });
+
+  // Flexible Printed Circuit (FPC) Ribbon Cable & Gold Terminal Contacts
+  const fpcGeom = new THREE.BoxGeometry(0.24, 0.25, 0.02);
+  const fpcMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4 });
+  const fpc = new THREE.Mesh(fpcGeom, fpcMat);
+  fpc.position.set(0.42, 0.78, 0.06);
+  group.add(fpc);
+
+  const goldPinsGeom = new THREE.BoxGeometry(0.18, 0.05, 0.03);
+  const goldPinsMat = getHardwareMat(0xfacc15, 0.2, 0.95);
+  const goldPins = new THREE.Mesh(goldPinsGeom, goldPinsMat);
+  goldPins.position.set(0.42, 0.9, 0.065);
+  group.add(goldPins);
+
+  // Laser-Etched Battery Specification Label Canvas
+  const bCanvas = document.createElement('canvas');
+  bCanvas.width = 512;
+  bCanvas.height = 256;
+  const bCtx = bCanvas.getContext('2d');
+  bCtx.fillStyle = '#b0bec5';
+  bCtx.fillRect(0, 0, 512, 256);
+  bCtx.fillStyle = '#1e293b';
+  bCtx.font = 'bold 30px monospace';
+  bCtx.fillText('Li-ion POLYMER BATTERY', 28, 55);
+  bCtx.font = '22px monospace';
+  bCtx.fillText('Model: A2831 • 1S1P • 308 mAh', 28, 98);
+  bCtx.fillText('Nominal: 3.85V === 1.18 Wh', 28, 138);
+  bCtx.fillText('Charge Voltage Limit: 4.40V', 28, 178);
+  bCtx.fillStyle = '#b91c1c';
+  bCtx.font = 'bold 20px monospace';
+  bCtx.fillText('CAUTION: DO NOT PUNCTURE OR HEAT', 28, 222);
+
+  const bTex = new THREE.CanvasTexture(bCanvas);
+  const labelGeom = new THREE.PlaneGeometry(1.1, 0.7);
+  const labelMat = new THREE.MeshStandardMaterial({ map: bTex, roughness: 0.4, metalness: 0.4 });
+  const label = new THREE.Mesh(labelGeom, labelMat);
+  label.position.set(0, -0.1, 0.058);
+  group.add(label);
 
   return group;
 }
@@ -2234,36 +2603,516 @@ function buildRealisticSmartwatchStrap(part, baseMaterial) {
 function buildRealisticSmartwatchSensor(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Ceramic Sensor Backing Disc
-  const discGeom = new THREE.CylinderGeometry(0.55, 0.55, 0.08, 28);
-  const discMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.2, metalness: 0.1 });
-  const disc = new THREE.Mesh(discGeom, discMat);
-  disc.rotation.x = Math.PI / 2;
-  group.add(disc);
+  // Polished Black Zirconia Ceramic Dome Backing
+  const domeGeom = new THREE.CylinderGeometry(0.64, 0.64, 0.08, 36);
+  const domeMat = new THREE.MeshStandardMaterial({
+    color: 0x090d16,
+    roughness: 0.12,
+    metalness: 0.25,
+  });
+  const dome = new THREE.Mesh(domeGeom, domeMat);
+  dome.rotation.x = Math.PI / 2;
+  group.add(dome);
 
-  // 4 Green Optical LED Emitter / Photodiode Lenses with Pulsing Bio-Luminescence
+  // Surrounding Stainless Steel ECG Lead Electrode Rings
+  const ecgRingGeom = new THREE.RingGeometry(0.52, 0.62, 36);
+  const ecgRingMat = getHardwareMat(0xd4d4d8, 0.18, 0.95);
+  const ecgRing = new THREE.Mesh(ecgRingGeom, ecgRingMat);
+  ecgRing.position.z = 0.042;
+  group.add(ecgRing);
+
+  // Translucent Center Sapphire Optical Window
+  const opticGlassGeom = new THREE.CylinderGeometry(0.48, 0.48, 0.02, 32);
+  const opticGlassMat = new THREE.MeshStandardMaterial({
+    color: 0x111827,
+    roughness: 0.08,
+    metalness: 0.2,
+  });
+  const opticGlass = new THREE.Mesh(opticGlassGeom, opticGlassMat);
+  opticGlass.rotation.x = Math.PI / 2;
+  opticGlass.position.z = 0.045;
+  group.add(opticGlass);
+
+  // 4 Green Optical LEDs (PPG Heart-Rate Emitters)
   const ledGroup = new THREE.Group();
   ledGroup.rotation.x = Math.PI / 2;
   for (let i = 0; i < 4; i++) {
     const angle = (i / 4) * Math.PI * 2;
-    const lensGeom = new THREE.SphereGeometry(0.08, 16, 16);
+    const lensGeom = new THREE.SphereGeometry(0.065, 16, 16);
     const lensMat = new THREE.MeshStandardMaterial({
       color: 0x22c55e,
       emissive: 0x22c55e,
-      emissiveIntensity: 1.2,
+      emissiveIntensity: 1.4,
       roughness: 0.1,
     });
     const lens = new THREE.Mesh(lensGeom, lensMat);
-    lens.position.set(Math.cos(angle) * 0.26, Math.sin(angle) * 0.26, 0.04);
+    lens.position.set(Math.cos(angle) * 0.28, Math.sin(angle) * 0.28, 0.05);
     ledGroup.add(lens);
   }
+
+  // Dual Central Infrared LEDs & Silicon Photodiode Array (SpO2 & Pulse)
+  [-0.1, 0.1].forEach((x) => {
+    const irGeom = new THREE.BoxGeometry(0.07, 0.07, 0.03);
+    const irMat = new THREE.MeshStandardMaterial({
+      color: 0xdc2626,
+      emissive: 0xdc2626,
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+    });
+    const ir = new THREE.Mesh(irGeom, irMat);
+    ir.position.set(x, 0, 0.05);
+    ledGroup.add(ir);
+  });
+
+  const photoDiodeGeom = new THREE.BoxGeometry(0.09, 0.09, 0.04);
+  const photoDiodeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.15, metalness: 0.8 });
+  const photoDiode = new THREE.Mesh(photoDiodeGeom, photoDiodeMat);
+  photoDiode.position.set(0, 0, 0.05);
+  ledGroup.add(photoDiode);
+
   group.add(ledGroup);
 
+  // Pulsing Bio-Luminescent Animation with Systolic Heartbeat Rhythm
   COMPONENT_ANIMATORS.push((delta, time) => {
-    const pulse = 0.8 + Math.sin(time * 5.0) * 0.6;
+    const cycle = (time * 1.3) % 1.0;
+    let pulse = 0.4;
+    if (cycle < 0.15) pulse = 0.4 + Math.sin((cycle / 0.15) * Math.PI) * 1.6;
+    else if (cycle > 0.22 && cycle < 0.35) pulse = 0.4 + Math.sin(((cycle - 0.22) / 0.13) * Math.PI) * 0.9;
     ledGroup.children.forEach((c) => {
-      if (c.material) c.material.emissiveIntensity = pulse;
+      if (c.material && c.material.emissive) {
+        c.material.emissiveIntensity = pulse;
+      }
     });
+  });
+
+  return group;
+}
+
+// -----------------------------------------------------------------------------
+// WIRELESS EARBUDS PROCEDURAL COMPONENTS (ENHANCED & REALISTIC)
+// -----------------------------------------------------------------------------
+function buildRealisticEarbudShell(part, baseMaterial, side = 'left') {
+  const group = new THREE.Group();
+  const isRight = side === 'right';
+  const mirrorX = isRight ? -1 : 1;
+
+  // High-Gloss Acoustic Polymer Material (Porcelain White Pearl)
+  const shellMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    roughness: 0.12,
+    metalness: 0.06,
+  });
+
+  // Ergonomic Acoustic Head Enclosure
+  const headGeom = new THREE.SphereGeometry(0.38, 28, 28);
+  headGeom.scale(1.0, 1.15, 0.9);
+  const headMesh = new THREE.Mesh(headGeom, shellMat);
+  headMesh.castShadow = true;
+  headMesh.receiveShadow = true;
+  headMesh.position.set(0, 0.12, 0);
+  group.add(headMesh);
+
+  // Angled In-Ear Sound Nozzle (tilted at ~32 degrees into ear canal)
+  const nozzleGeom = new THREE.CylinderGeometry(0.16, 0.18, 0.26, 24);
+  const nozzleMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.1 });
+  const nozzle = new THREE.Mesh(nozzleGeom, nozzleMat);
+  nozzle.rotation.z = mirrorX * 0.55;
+  nozzle.rotation.x = -0.25;
+  nozzle.position.set(mirrorX * 0.26, 0.18, 0.22);
+  group.add(nozzle);
+
+  // Micro-Perforated Stainless Steel Acoustic Aperture Grille
+  const grilleGeom = new THREE.CircleGeometry(0.155, 24);
+  const grilleMat = getHardwareMat(0x64748b, 0.2, 0.9);
+  const grille = new THREE.Mesh(grilleGeom, grilleMat);
+  grille.rotation.x = -Math.PI / 2;
+  grille.position.set(mirrorX * 0.33, 0.24, 0.32);
+  group.add(grille);
+
+  // Translucent Soft Medical-Grade Silicone In-Ear Tip
+  const tipGeom = new THREE.SphereGeometry(0.24, 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.7);
+  const tipMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.5,
+    metalness: 0.02,
+    transparent: true,
+    opacity: 0.78,
+  });
+  const tip = new THREE.Mesh(tipGeom, tipMat);
+  tip.rotation.x = -0.8;
+  tip.rotation.z = mirrorX * 0.55;
+  tip.position.set(mirrorX * 0.36, 0.26, 0.36);
+  group.add(tip);
+
+  // Downward Ergonomic Acoustic Stem
+  const stemGeom = new THREE.CylinderGeometry(0.11, 0.09, 0.75, 24);
+  const stem = new THREE.Mesh(stemGeom, shellMat);
+  stem.position.set(mirrorX * -0.05, -0.32, 0.02);
+  stem.rotation.z = mirrorX * -0.08;
+  stem.castShadow = true;
+  group.add(stem);
+
+  // Capacitive Touch / Force Sensor Indentation on Stem
+  const sensorGeom = new THREE.BoxGeometry(0.04, 0.28, 0.07);
+  const sensorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3, metalness: 0.3 });
+  const touchSensor = new THREE.Mesh(sensorGeom, sensorMat);
+  touchSensor.position.set(mirrorX * -0.14, -0.28, 0.02);
+  group.add(touchSensor);
+
+  // Top Outward Active Noise Cancellation (ANC) Microphone Mesh Port
+  const ancPortGeom = new THREE.BoxGeometry(0.08, 0.14, 0.05);
+  const ancPortMat = getHardwareMat(0x0f172a, 0.4, 0.85);
+  const ancPort = new THREE.Mesh(ancPortGeom, ancPortMat);
+  ancPort.position.set(mirrorX * -0.18, 0.32, -0.15);
+  group.add(ancPort);
+
+  // In-Ear Optical Skin Detection Window (Infrared proximity sensor)
+  const proxGeom = new THREE.CircleGeometry(0.05, 16);
+  const proxMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.1 });
+  const prox = new THREE.Mesh(proxGeom, proxMat);
+  prox.position.set(mirrorX * 0.18, 0.02, 0.28);
+  prox.rotation.y = mirrorX * 0.7;
+  group.add(prox);
+
+  // Rear Acoustic Pressure-Equalization Vent
+  const ventGeom = new THREE.CylinderGeometry(0.035, 0.035, 0.06, 12);
+  const ventMat = getHardwareMat(0x1e293b, 0.3, 0.8);
+  const vent = new THREE.Mesh(ventGeom, ventMat);
+  vent.rotation.x = Math.PI / 2;
+  vent.position.set(0, 0.28, -0.36);
+  group.add(vent);
+
+  // Bottom Gold-Plated Magnetic Charging Contacts & Bottom Voice Mic
+  const contactMat = getHardwareMat(0xfacc15, 0.2, 0.95);
+  const contactGeom = new THREE.CylinderGeometry(0.095, 0.095, 0.03, 20);
+  const contact = new THREE.Mesh(contactGeom, contactMat);
+  contact.position.set(mirrorX * -0.05, -0.7, 0.02);
+  group.add(contact);
+
+  const voiceMicGeom = new THREE.CylinderGeometry(0.03, 0.03, 0.04, 12);
+  const voiceMicMat = getHardwareMat(0x0f172a, 0.3, 0.8);
+  const voiceMic = new THREE.Mesh(voiceMicGeom, voiceMicMat);
+  voiceMic.position.set(mirrorX * -0.05, -0.71, 0.02);
+  group.add(voiceMic);
+
+  // Laser-Etched Channel Label (L / R)
+  const lCanvas = document.createElement('canvas');
+  lCanvas.width = 128;
+  lCanvas.height = 128;
+  const lCtx = lCanvas.getContext('2d');
+  lCtx.fillStyle = '#f8fafc';
+  lCtx.fillRect(0, 0, 128, 128);
+  lCtx.fillStyle = '#64748b';
+  lCtx.font = 'bold 74px -apple-system, sans-serif';
+  lCtx.textAlign = 'center';
+  lCtx.fillText(isRight ? 'R' : 'L', 64, 92);
+  const lTex = new THREE.CanvasTexture(lCanvas);
+  const labelGeom = new THREE.PlaneGeometry(0.12, 0.12);
+  const labelMat = new THREE.MeshBasicMaterial({ map: lTex });
+  const labelMesh = new THREE.Mesh(labelGeom, labelMat);
+  labelMesh.position.set(mirrorX * 0.04, -0.22, 0.11);
+  labelMesh.rotation.y = mirrorX * -0.2;
+  group.add(labelMesh);
+
+  return group;
+}
+
+function buildRealisticEarbudChargingCase(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Premium High-Gloss White Pebble Form Case
+  const caseMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    roughness: 0.14,
+    metalness: 0.06,
+  });
+
+  // Lower Main Case Housing
+  const baseGeom = new THREE.BoxGeometry(2.35, 1.25, 0.95);
+  const baseMesh = new THREE.Mesh(baseGeom, caseMat);
+  baseMesh.position.y = -0.22;
+  baseMesh.castShadow = true;
+  baseMesh.receiveShadow = true;
+  group.add(baseMesh);
+
+  // Clamshell Magnetic Lid with Rounded Continuous Profile
+  const lidGeom = new THREE.BoxGeometry(2.35, 0.65, 0.95);
+  const lidMesh = new THREE.Mesh(lidGeom, caseMat);
+  lidMesh.position.y = 0.62;
+  lidMesh.castShadow = true;
+  group.add(lidMesh);
+
+  // Lid Seam Gap
+  const seamGeom = new THREE.BoxGeometry(2.37, 0.02, 0.97);
+  const seamMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.3, metalness: 0.5 });
+  const seam = new THREE.Mesh(seamGeom, seamMat);
+  seam.position.y = 0.3;
+  group.add(seam);
+
+  // Rear Precision Stainless Steel Hinge Block
+  const hingeGeom = new THREE.BoxGeometry(0.68, 0.16, 0.06);
+  const hingeMat = getHardwareMat(0xd4d4d8, 0.2, 0.95);
+  const hinge = new THREE.Mesh(hingeGeom, hingeMat);
+  hinge.position.set(0, 0.3, -0.485);
+  group.add(hinge);
+
+  // Dual Contoured Magnetic Charging Wells (Left and Right Earbud Bays)
+  [-0.62, 0.62].forEach((x) => {
+    const wellGeom = new THREE.CylinderGeometry(0.24, 0.2, 0.45, 24);
+    const wellMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+    const well = new THREE.Mesh(wellGeom, wellMat);
+    well.position.set(x, 0.38, 0.05);
+    group.add(well);
+
+    // Gold-Plated Spring Pogo Charging Pins
+    [-0.06, 0.06].forEach((px) => {
+      const pinGeom = new THREE.CylinderGeometry(0.025, 0.025, 0.1, 12);
+      const pinMat = getHardwareMat(0xfacc15, 0.2, 0.95);
+      const pin = new THREE.Mesh(pinGeom, pinMat);
+      pin.position.set(x + px, 0.2, 0.05);
+      group.add(pin);
+    });
+  });
+
+  // Front Multi-Color Status Micro-LED Indicator
+  const ledGeom = new THREE.SphereGeometry(0.035, 16, 16);
+  const ledMat = new THREE.MeshStandardMaterial({
+    color: 0x22c55e,
+    emissive: 0x22c55e,
+    emissiveIntensity: 1.5,
+    roughness: 0.1,
+  });
+  const led = new THREE.Mesh(ledGeom, ledMat);
+  led.position.set(0, 0.1, 0.482);
+  group.add(led);
+
+  // Soft breathing pulse animation on case status LED
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const pulse = 0.9 + Math.sin(time * 2.8) * 0.7;
+    ledMat.emissiveIntensity = pulse;
+  });
+
+  // Bottom Precision USB-C Charging Port with Brushed Aluminum Bezel
+  const portBezelGeom = new THREE.BoxGeometry(0.42, 0.14, 0.04);
+  const portBezelMat = getHardwareMat(0x94a3b8, 0.25, 0.9);
+  const portBezel = new THREE.Mesh(portBezelGeom, portBezelMat);
+  portBezel.rotation.x = Math.PI / 2;
+  portBezel.position.set(0, -0.84, 0);
+  group.add(portBezel);
+
+  const portHoleGeom = new THREE.BoxGeometry(0.32, 0.06, 0.06);
+  const portHoleMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.5 });
+  const portHole = new THREE.Mesh(portHoleGeom, portHoleMat);
+  portHole.rotation.x = Math.PI / 2;
+  portHole.position.set(0, -0.845, 0);
+  group.add(portHole);
+
+  // Rear Flush Circular Pairing Button
+  const btnGeom = new THREE.CylinderGeometry(0.18, 0.18, 0.03, 24);
+  const btnMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3 });
+  const pairBtn = new THREE.Mesh(btnGeom, btnMat);
+  pairBtn.rotation.x = Math.PI / 2;
+  pairBtn.position.set(0, -0.15, -0.48);
+  group.add(pairBtn);
+
+  // Internal Qi Wireless Charging Copper Induction Coil (Visible during exploded view)
+  const coilGeom = new THREE.TorusGeometry(0.38, 0.04, 16, 32);
+  const coilMat = getHardwareMat(0xd97706, 0.25, 0.9);
+  const coil = new THREE.Mesh(coilGeom, coilMat);
+  coil.position.set(0, -0.22, -0.38);
+  group.add(coil);
+
+  return group;
+}
+
+function buildRealisticEarbudBattery(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Silver Foil Rechargeable Li-Ion Pouch Cell
+  const pouchGeom = new THREE.BoxGeometry(1.72, 0.85, 0.38);
+  const pouchMat = new THREE.MeshStandardMaterial({
+    color: 0xcfd8dc,
+    roughness: 0.32,
+    metalness: 0.85,
+  });
+  const pouch = new THREE.Mesh(pouchGeom, pouchMat);
+  pouch.castShadow = true;
+  group.add(pouch);
+
+  // Sealed Crimped Foil Margin Flanges
+  const flangeMat = new THREE.MeshStandardMaterial({ color: 0xb0bec5, roughness: 0.38, metalness: 0.8 });
+  const fLeftGeom = new THREE.BoxGeometry(0.06, 0.82, 0.08);
+  const fLeft = new THREE.Mesh(fLeftGeom, flangeMat);
+  fLeft.position.set(-0.89, 0, 0);
+  group.add(fLeft);
+
+  const fRightGeom = new THREE.BoxGeometry(0.06, 0.82, 0.08);
+  const fRight = new THREE.Mesh(fRightGeom, flangeMat);
+  fRight.position.set(0.89, 0, 0);
+  group.add(fRight);
+
+  // Amber Kapton Polyimide Insulation Safety Tape
+  const kaptonGeom = new THREE.BoxGeometry(0.48, 0.88, 0.39);
+  const kaptonMat = new THREE.MeshStandardMaterial({
+    color: 0xd97706,
+    roughness: 0.3,
+    metalness: 0.2,
+    transparent: true,
+    opacity: 0.86,
+  });
+  const kapton = new THREE.Mesh(kaptonGeom, kaptonMat);
+  kapton.position.set(0.64, 0, 0);
+  group.add(kapton);
+
+  // Integrated Battery Protection Circuit Module (PCM / BMS)
+  const bmsGeom = new THREE.BoxGeometry(0.12, 0.72, 0.22);
+  const bmsMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.5, metalness: 0.2 });
+  const bms = new THREE.Mesh(bmsGeom, bmsMat);
+  bms.position.set(0.84, 0, 0);
+  group.add(bms);
+
+  // Battery Fuel Gauge IC & Thermistor Sensor
+  const icGeom = new THREE.BoxGeometry(0.06, 0.18, 0.12);
+  const icMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2 });
+  const ic = new THREE.Mesh(icGeom, icMat);
+  ic.position.set(0.88, 0.12, 0);
+  group.add(ic);
+
+  // Micro Flexible Ribbon Cable with Gold Connector Terminals
+  const ribbonGeom = new THREE.BoxGeometry(0.24, 0.14, 0.04);
+  const ribbonMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4 });
+  const ribbon = new THREE.Mesh(ribbonGeom, ribbonMat);
+  ribbon.position.set(0.96, -0.15, 0);
+  group.add(ribbon);
+
+  const goldPinsGeom = new THREE.BoxGeometry(0.06, 0.12, 0.06);
+  const goldPinsMat = getHardwareMat(0xfacc15, 0.2, 0.95);
+  const goldPins = new THREE.Mesh(goldPinsGeom, goldPinsMat);
+  goldPins.position.set(1.08, -0.15, 0);
+  group.add(goldPins);
+
+  // Laser-Etched Case Battery Specs
+  const bCanvas = document.createElement('canvas');
+  bCanvas.width = 512;
+  bCanvas.height = 256;
+  const bCtx = bCanvas.getContext('2d');
+  bCtx.fillStyle = '#cfd8dc';
+  bCtx.fillRect(0, 0, 512, 256);
+  bCtx.fillStyle = '#1e293b';
+  bCtx.font = 'bold 32px monospace';
+  bCtx.fillText('WIRELESS EARBUDS CASE BATTERY', 24, 55);
+  bCtx.font = '24px monospace';
+  bCtx.fillText('Model: A2566 • Li-ion 1S1P', 24, 105);
+  bCtx.fillText('Capacity: 520 mAh • 3.82V === 1.987 Wh', 24, 148);
+  bCtx.fillText('Max Charge: 4.35V • Standard Charge: 0.5A', 24, 190);
+  bCtx.fillStyle = '#b91c1c';
+  bCtx.font = 'bold 20px monospace';
+  bCtx.fillText('RECHARGEABLE • DO NOT INCINERATE', 24, 230);
+
+  const bTex = new THREE.CanvasTexture(bCanvas);
+  const labelGeom = new THREE.PlaneGeometry(1.2, 0.6);
+  const labelMat = new THREE.MeshStandardMaterial({ map: bTex, roughness: 0.4, metalness: 0.3 });
+  const label = new THREE.Mesh(labelGeom, labelMat);
+  label.position.set(-0.2, 0, 0.192);
+  group.add(label);
+
+  // Twin Miniature Stainless Steel Button Coin-Cells (for Earbuds)
+  [-0.6, 0.6].forEach((x, idx) => {
+    const coinGeom = new THREE.CylinderGeometry(0.18, 0.18, 0.12, 24);
+    const coinMat = getHardwareMat(0xe2e8f0, 0.2, 0.95);
+    const coin = new THREE.Mesh(coinGeom, coinMat);
+    coin.rotation.x = Math.PI / 2;
+    coin.position.set(x, 0.52, 0);
+    group.add(coin);
+  });
+
+  return group;
+}
+
+function buildRealisticEarbudSpeakerDriver(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Neodymium (NdFeB) N52 Permanent Magnet Ring & Outer Steel Yoke
+  const magnetGeom = new THREE.CylinderGeometry(0.34, 0.34, 0.14, 32);
+  const magnetMat = getHardwareMat(0x64748b, 0.22, 0.9);
+  const magnet = new THREE.Mesh(magnetGeom, magnetMat);
+  magnet.rotation.x = Math.PI / 2;
+  magnet.castShadow = true;
+  group.add(magnet);
+
+  // Central Pure Copper Voice Coil Winding (Concentric Coils)
+  const coilGeom = new THREE.CylinderGeometry(0.2, 0.2, 0.16, 28);
+  const coilMat = new THREE.MeshStandardMaterial({
+    color: 0xb45309,
+    roughness: 0.25,
+    metalness: 0.85,
+  });
+  const voiceCoil = new THREE.Mesh(coilGeom, coilMat);
+  voiceCoil.rotation.x = Math.PI / 2;
+  voiceCoil.position.z = 0.02;
+  group.add(voiceCoil);
+
+  // Ultra-Thin Titanium Composite Acoustic Dome Diaphragm
+  const domeGeom = new THREE.SphereGeometry(0.22, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.45);
+  const domeMat = new THREE.MeshStandardMaterial({
+    color: 0xfacc15,
+    roughness: 0.18,
+    metalness: 0.92,
+  });
+  const dome = new THREE.Mesh(domeGeom, domeMat);
+  dome.rotation.x = -Math.PI / 2;
+  dome.position.z = 0.1;
+  group.add(dome);
+
+  // Corrugated Diaphragm Suspension Surround Ring (Flexible Compliance)
+  const surroundGeom = new THREE.TorusGeometry(0.26, 0.04, 16, 32);
+  const surroundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+  const surround = new THREE.Mesh(surroundGeom, surroundMat);
+  surround.position.z = 0.08;
+  group.add(surround);
+
+  // Front Stainless Steel Acoustic Protective Grille
+  const grilleGeom = new THREE.CircleGeometry(0.33, 32);
+  const grilleMat = getHardwareMat(0xd4d4d8, 0.25, 0.92);
+  const grille = new THREE.Mesh(grilleGeom, grilleMat);
+  grille.position.z = 0.14;
+  group.add(grille);
+
+  // Micro-Perforation Hexagonal Holes on Grille Face
+  for (let r = 0.06; r <= 0.26; r += 0.06) {
+    const count = Math.round(r * 36);
+    for (let c = 0; c < count; c++) {
+      const angle = (c / count) * Math.PI * 2;
+      const holeGeom = new THREE.CircleGeometry(0.015, 8);
+      const holeMat = new THREE.MeshBasicMaterial({ color: 0x090d16 });
+      const hole = new THREE.Mesh(holeGeom, holeMat);
+      hole.position.set(Math.cos(angle) * r, Math.sin(angle) * r, 0.142);
+      group.add(hole);
+    }
+  }
+
+  // Rear Acoustic Damping Chamber with Tuning Fleece Mesh
+  const chamberGeom = new THREE.CylinderGeometry(0.28, 0.28, 0.08, 24);
+  const chamberMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+  const chamber = new THREE.Mesh(chamberGeom, chamberMat);
+  chamber.rotation.x = Math.PI / 2;
+  chamber.position.z = -0.11;
+  group.add(chamber);
+
+  // Gold Solder Terminal Contact Tabs with Micro Lead Wires
+  [-0.14, 0.14].forEach((x) => {
+    const tabGeom = new THREE.BoxGeometry(0.06, 0.08, 0.02);
+    const tabMat = getHardwareMat(0xfacc15, 0.2, 0.95);
+    const tab = new THREE.Mesh(tabGeom, tabMat);
+    tab.position.set(x, -0.32, 0);
+    group.add(tab);
+  });
+
+  // Dynamic Acoustic Excursion (Micro diaphragm oscillation to simulate hi-fi music playback)
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const excursion = Math.sin(time * 30.0) * 0.012 + Math.sin(time * 12.0) * 0.008;
+    dome.position.z = 0.1 + excursion;
+    voiceCoil.position.z = 0.02 + excursion * 0.6;
   });
 
   return group;
