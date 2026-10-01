@@ -310,17 +310,22 @@ app.post('/api/explain', async (req, res) => {
 
   // Look up in preloaded objects.js registry
   let registryDesc = null;
+  let registryPart = null;
   if (objectLabel) {
     const objKey = Object.keys(OBJECTS).find(k => OBJECTS[k].label.toLowerCase() === objectLabel.toLowerCase() || k.toLowerCase() === objectLabel.toLowerCase());
     if (objKey && OBJECTS[objKey]) {
       const pMatch = OBJECTS[objKey].parts.find(p => p.id === partId || p.name.toLowerCase() === searchTerm.toLowerCase());
-      if (pMatch && pMatch.description) registryDesc = pMatch.description;
+      if (pMatch) {
+        registryPart = pMatch;
+        registryDesc = pMatch.description;
+      }
     }
   }
-  if (!registryDesc && partId) {
+  if (!registryPart && partId) {
     for (const obj of Object.values(OBJECTS)) {
       const pMatch = obj.parts.find(p => p.id === partId);
-      if (pMatch && pMatch.description) {
+      if (pMatch) {
+        registryPart = pMatch;
         registryDesc = pMatch.description;
         break;
       }
@@ -335,8 +340,8 @@ app.post('/api/explain', async (req, res) => {
 
   // Distinct fallback description when Anthropic API key is not present
   const defaultDesc = depthLevel === 'technical'
-    ? `Technical Specification [${searchTerm}]: Functions as an integral subsystem of ${objectLabel || 'the assembly'}. ${baseDesc} Engineered to maintain dimensional stability, thermal dissipation, and signal integrity under dynamic operating loads.`
-    : baseDesc;
+    ? (registryPart?.technical || baseDesc)
+    : (registryPart?.simple || baseDesc);
 
   const name = partName || (catalogEntry ? catalogEntry.name : searchTerm);
   const isInScene = catalogEntry ? catalogEntry.isInScene : true;

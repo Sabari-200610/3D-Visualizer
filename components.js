@@ -1173,8 +1173,91 @@ function buildRealisticElectron(part, baseMaterial) {
 }
 
 // -----------------------------------------------------------------------------
-// 10. SOLAR SYSTEM: Detailed Sun Corona, Planetary Spheres, Saturn Rings
+// 10. SOLAR SYSTEM: Real Keplerian Orbital Mechanics, Concentric Orbit Rings & Moon
 // -----------------------------------------------------------------------------
+const SOLAR_ORBITS = {
+  mercury: {
+    radius: 2.8,
+    speed: 0.72,       // Keplerian: ~3x faster than Earth
+    initialAngle: 0.85, // ~49°
+    inclination: 0.12,  // 7° orbital inclination
+    rotSpeed: 0.15,
+    axialTilt: 0.034,
+  },
+  venus: {
+    radius: 4.3,
+    speed: 0.38,       // ~1.6x faster than Earth
+    initialAngle: 2.35, // ~135°
+    inclination: 0.06,  // 3.4° tilt
+    rotSpeed: -0.06,   // Retrograde spin
+    axialTilt: 3.1,
+  },
+  earth: {
+    radius: 6.0,
+    speed: 0.24,       // Standard 1.0 reference
+    initialAngle: 3.95, // ~226°
+    inclination: 0.0,   // Ecliptic plane reference
+    rotSpeed: 0.45,
+    axialTilt: 0.41,   // 23.5°
+  },
+  mars: {
+    radius: 7.8,
+    speed: 0.16,       // ~0.67x Earth
+    initialAngle: 1.15, // ~66°
+    inclination: 0.08,  // 1.85°
+    rotSpeed: 0.42,
+    axialTilt: 0.44,   // 25.2°
+  },
+  jupiter: {
+    radius: 10.6,
+    speed: 0.095,      // ~0.4x Earth
+    initialAngle: 5.45, // ~312°
+    inclination: -0.05, // 1.3°
+    rotSpeed: 0.85,    // Fast gas giant rotation
+    axialTilt: 0.054,  // 3.1°
+  },
+  saturn: {
+    radius: 14.0,
+    speed: 0.062,      // ~0.26x Earth
+    initialAngle: 2.95, // ~169°
+    inclination: 0.1,   // 2.5°
+    rotSpeed: 0.75,
+    axialTilt: 0.47,   // 26.7°
+  },
+  'saturn-ring': {
+    radius: 14.0,
+    speed: 0.062,      // Exactly synchronized with Saturn
+    initialAngle: 2.95,
+    inclination: 0.1,
+    rotSpeed: 0.75,
+    axialTilt: 0.47,
+  },
+  uranus: {
+    radius: 17.5,
+    speed: 0.042,      // ~0.18x Earth
+    initialAngle: 0.28, // ~16°
+    inclination: -0.07, // 0.77°
+    rotSpeed: 0.52,
+    axialTilt: 1.71,   // 97.8° (spins sideways!)
+  },
+  neptune: {
+    radius: 21.0,
+    speed: 0.032,      // ~0.13x Earth
+    initialAngle: 4.65, // ~266°
+    inclination: 0.09,  // 1.77°
+    rotSpeed: 0.58,
+    axialTilt: 0.49,   // 28.3°
+  },
+  pluto: {
+    radius: 24.5,
+    speed: 0.024,      // ~0.10x Earth
+    initialAngle: 1.95, // ~112°
+    inclination: 0.65,  // 17.2° dramatic high orbital inclination!
+    rotSpeed: 0.12,
+    axialTilt: 2.13,   // 122.5°
+  },
+};
+
 function buildRealisticSun(part, baseMaterial) {
   const group = new THREE.Group();
 
@@ -1183,21 +1266,99 @@ function buildRealisticSun(part, baseMaterial) {
   const sun = new THREE.Mesh(sunGeom, baseMaterial);
   group.add(sun);
 
-  // Coronal Solar Flare Halo
-  const coronaGeom = new THREE.SphereGeometry(1.85, 32, 32);
+  // Coronal Solar Flare Atmosphere (Pulsing Halo)
+  const coronaGeom = new THREE.SphereGeometry(1.88, 36, 36);
   const coronaMat = new THREE.MeshBasicMaterial({
     color: 0xfbbf24,
     transparent: true,
-    opacity: 0.28,
+    opacity: 0.24,
     side: THREE.BackSide,
   });
   const corona = new THREE.Mesh(coronaGeom, coronaMat);
   group.add(corona);
 
-  // Pulsing solar turbulence
+  // Outer Solar Wind Ethereal Glow
+  const glowGeom = new THREE.SphereGeometry(2.2, 32, 32);
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: 0xf59e0b,
+    transparent: true,
+    opacity: 0.12,
+    side: THREE.BackSide,
+  });
+  const glow = new THREE.Mesh(glowGeom, glowMat);
+  group.add(glow);
+
+  // Central Omnidirectional Solar PointLight
+  const sunLight = new THREE.PointLight(0xfffbeb, 2.2, 65, 0.4);
+  sunLight.position.set(0, 0, 0);
+  group.add(sunLight);
+
+  // Concentric Celestial Orbital Path Guide Lines (Orbits for all planets)
+  const orbitColors = {
+    mercury: 0x94a3b8,
+    venus: 0xfde047,
+    earth: 0x38bdf8,
+    mars: 0xf87171,
+    jupiter: 0xfbbf24,
+    saturn: 0xfef08a,
+    uranus: 0x67e8f9,
+    neptune: 0x60a5fa,
+    pluto: 0xd1d5db,
+  };
+
+  const planetKeys = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
+  planetKeys.forEach((key) => {
+    const orb = SOLAR_ORBITS[key];
+    if (!orb) return;
+
+    // Build 3D Elliptical Orbit Loop
+    const segments = 128;
+    const points = [];
+    for (let i = 0; i <= segments; i++) {
+      const theta = (i / segments) * Math.PI * 2;
+      const x = orb.radius * Math.cos(theta);
+      const z = orb.radius * Math.sin(theta);
+      const y = orb.inclination * Math.sin(theta);
+      points.push(new THREE.Vector3(x, y, z));
+    }
+    const orbitGeom = new THREE.BufferGeometry().setFromPoints(points);
+    const orbitMat = new THREE.LineBasicMaterial({
+      color: orbitColors[key] || 0x38bdf8,
+      transparent: true,
+      opacity: key === 'pluto' ? 0.35 : 0.22,
+      depthWrite: false,
+    });
+    const orbitLine = new THREE.Line(orbitGeom, orbitMat);
+    group.add(orbitLine);
+  });
+
+  // Main Asteroid Belt (Between Mars & Jupiter: r ~ 8.8 to 9.7)
+  const asteroidCount = 140;
+  const asteroidMat = new THREE.MeshStandardMaterial({
+    color: 0x78716c,
+    roughness: 0.9,
+    metalness: 0.1,
+  });
+  const asteroidGroup = new THREE.Group();
+  for (let a = 0; a < asteroidCount; a++) {
+    const aDist = 8.8 + Math.random() * 0.9;
+    const aAngle = Math.random() * Math.PI * 2;
+    const aY = (Math.random() - 0.5) * 0.4;
+    const aSize = 0.025 + Math.random() * 0.04;
+    const aGeom = new THREE.DodecahedronGeometry(aSize, 0);
+    const aMesh = new THREE.Mesh(aGeom, asteroidMat);
+    aMesh.position.set(aDist * Math.cos(aAngle), aY, aDist * Math.sin(aAngle));
+    asteroidGroup.add(aMesh);
+  }
+  group.add(asteroidGroup);
+
+  // Solar turbulence & asteroid belt rotation animator
   COMPONENT_ANIMATORS.push((delta, time) => {
-    const scale = 1.0 + Math.sin(time * 2.5) * 0.025;
-    corona.scale.set(scale, scale, scale);
+    const pulse = 1.0 + Math.sin(time * 2.5) * 0.035;
+    corona.scale.set(pulse, pulse, pulse);
+    glow.scale.set(1.0 + Math.sin(time * 1.8) * 0.025, 1.0 + Math.sin(time * 1.8) * 0.025, 1.0 + Math.sin(time * 1.8) * 0.025);
+    asteroidGroup.rotation.y += delta * 0.03;
+    sun.rotation.y += delta * 0.05;
   });
 
   return group;
@@ -1206,53 +1367,183 @@ function buildRealisticSun(part, baseMaterial) {
 function buildRealisticSaturnRings(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // High-Density Saturn Ring Bands
-  const ringGeom = new THREE.RingGeometry(1.5, 2.5, 64);
+  // High-Density Saturn Ring Bands (Cassini division, A & B rings)
+  const ringGeom = new THREE.RingGeometry(1.35, 2.55, 64);
   const ringMat = new THREE.MeshStandardMaterial({
     color: 0xd4c090,
-    roughness: 0.7,
+    roughness: 0.65,
+    metalness: 0.05,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.75,
+    opacity: 0.82,
   });
   const ring = new THREE.Mesh(ringGeom, ringMat);
-  ring.rotation.x = Math.PI / 2 + 0.45; // Axial tilt
+  ring.rotation.x = Math.PI / 2 + 0.47; // Saturn's 26.7° axial tilt!
   group.add(ring);
+
+  // Outer Faint Ring (E Ring / A Ring rim)
+  const outerRingGeom = new THREE.RingGeometry(2.6, 2.85, 48);
+  const outerRingMat = new THREE.MeshStandardMaterial({
+    color: 0xc8b584,
+    roughness: 0.8,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.35,
+  });
+  const outerRing = new THREE.Mesh(outerRingGeom, outerRingMat);
+  outerRing.rotation.x = Math.PI / 2 + 0.47;
+  group.add(outerRing);
+
+  // Synchronized Keplerian Orbit with Saturn
+  const orb = SOLAR_ORBITS['saturn-ring'];
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const angle = orb.initialAngle + orb.speed * time;
+    const ox = orb.radius * Math.cos(angle);
+    const oz = orb.radius * Math.sin(angle);
+    const oy = orb.inclination * Math.sin(angle);
+
+    if (group.userData && group.userData.originalPosition) {
+      group.userData.originalPosition.set(ox, oy, oz);
+      if (group.userData.explodeDirection) {
+        group.userData.explodeDirection.set(ox, oy * 2 + 0.8, oz).normalize();
+      }
+    }
+
+    const explodeFactor = (typeof currentExplodeFactor !== 'undefined') ? currentExplodeFactor : 0;
+    const maxExplode = (typeof OBJECTS !== 'undefined' && OBJECTS['solar-system'] && OBJECTS['solar-system'].explodeDistance) || 5.0;
+    const explodeDist = explodeFactor * maxExplode;
+
+    // Rings lift slightly above Saturn during exploded view for inspection
+    group.position.set(
+      ox + (ox / orb.radius) * explodeDist,
+      oy + explodeDist * 0.7,
+      oz + (oz / orb.radius) * explodeDist
+    );
+
+    // Keep ring rotating slowly
+    ring.rotation.z += delta * 0.05;
+  });
 
   return group;
 }
 
 function buildRealisticPlanet(part, baseMaterial) {
   const group = new THREE.Group();
+  const id = part.id;
+  const orb = SOLAR_ORBITS[id];
 
   const r = part.geometry.args[0] || 0.3;
   const geom = new THREE.SphereGeometry(r, 36, 36);
   const planet = new THREE.Mesh(geom, baseMaterial);
   planet.castShadow = true;
   planet.receiveShadow = true;
+
+  // Apply authentic planetary axial tilt to planet mesh
+  if (orb && orb.axialTilt) {
+    planet.rotation.z = orb.axialTilt;
+  }
   group.add(planet);
 
-  // Earth Cloud Layer
-  if (part.id === 'earth') {
-    const cloudGeom = new THREE.SphereGeometry(r * 1.025, 32, 32);
+  // Earth Atmosphere, Clouds & Moon
+  if (id === 'earth') {
+    // Dynamic Cloud Layer
+    const cloudGeom = new THREE.SphereGeometry(r * 1.028, 32, 32);
     const cloudMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.38,
       roughness: 0.9,
     });
     const clouds = new THREE.Mesh(cloudGeom, cloudMat);
+    clouds.rotation.z = 0.41; // Match Earth tilt
     group.add(clouds);
 
+    // Earth's Moon (Luna)
+    const moonOrbitGroup = new THREE.Group();
+    const moonGeom = new THREE.SphereGeometry(r * 0.27, 20, 20);
+    const moonMat = new THREE.MeshStandardMaterial({
+      color: 0xa8a29e,
+      roughness: 0.92,
+      metalness: 0.05,
+    });
+    const moon = new THREE.Mesh(moonGeom, moonMat);
+    moon.position.set(0.78, 0, 0);
+    moonOrbitGroup.add(moon);
+    group.add(moonOrbitGroup);
+
     COMPONENT_ANIMATORS.push((delta) => {
-      clouds.rotation.y += delta * 0.15;
+      clouds.rotation.y += delta * 0.18;
+      moonOrbitGroup.rotation.y += delta * 1.2; // Moon orbits Earth
+      moon.rotation.y += delta * 0.6;
     });
   }
 
-  // Gentle axial rotation
-  COMPONENT_ANIMATORS.push((delta) => {
-    planet.rotation.y += delta * 0.3;
-  });
+  // Mars Polar Ice Caps
+  if (id === 'mars') {
+    const capGeom = new THREE.SphereGeometry(r * 1.008, 20, 10, 0, Math.PI * 2, 0, Math.PI * 0.18);
+    const capMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+    const northCap = new THREE.Mesh(capGeom, capMat);
+    northCap.rotation.z = 0.44;
+    group.add(northCap);
+  }
+
+  // Jupiter Great Red Spot feature
+  if (id === 'jupiter') {
+    const grsGeom = new THREE.SphereGeometry(r * 1.01, 16, 16, 0, 0.4, 1.8, 0.3);
+    const grsMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.6 });
+    const grs = new THREE.Mesh(grsGeom, grsMat);
+    grs.position.set(0, 0, 0);
+    planet.add(grs);
+  }
+
+  // Uranus Vertical Thin Ring
+  if (id === 'uranus') {
+    const uRingGeom = new THREE.RingGeometry(r * 1.45, r * 1.65, 36);
+    const uRingMat = new THREE.MeshStandardMaterial({
+      color: 0xa5f3fc,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.35,
+    });
+    const uRing = new THREE.Mesh(uRingGeom, uRingMat);
+    uRing.rotation.y = Math.PI / 2; // Vertical ring matching sideways tilt!
+    group.add(uRing);
+  }
+
+  // Live Keplerian Orbital Motion and Axial Rotation
+  if (orb) {
+    COMPONENT_ANIMATORS.push((delta, time) => {
+      // 1. Orbital position
+      const angle = orb.initialAngle + orb.speed * time;
+      const ox = orb.radius * Math.cos(angle);
+      const oz = orb.radius * Math.sin(angle);
+      const oy = orb.inclination * Math.sin(angle);
+
+      if (group.userData && group.userData.originalPosition) {
+        group.userData.originalPosition.set(ox, oy, oz);
+        if (group.userData.explodeDirection) {
+          group.userData.explodeDirection.set(ox, oy * 2, oz).normalize();
+        }
+      }
+
+      const explodeFactor = (typeof currentExplodeFactor !== 'undefined') ? currentExplodeFactor : 0;
+      const maxExplode = (typeof OBJECTS !== 'undefined' && OBJECTS['solar-system'] && OBJECTS['solar-system'].explodeDistance) || 5.0;
+      const explodeDist = explodeFactor * maxExplode;
+
+      group.position.set(
+        ox + (ox / orb.radius) * explodeDist,
+        oy + explodeDist * 0.25,
+        oz + (oz / orb.radius) * explodeDist
+      );
+
+      // 2. Day/Night Axial Spin
+      planet.rotation.y += delta * (orb.rotSpeed || 0.3);
+    });
+  } else {
+    COMPONENT_ANIMATORS.push((delta) => {
+      planet.rotation.y += delta * 0.3;
+    });
+  }
 
   return group;
 }

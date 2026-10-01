@@ -174,6 +174,15 @@
           <div id="categoryTabsRow" class="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none"
             style="scrollbar-width: none;">
             <!-- Dynamically populated category tabs -->
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-semibold bg-blue-600/25 border-blue-500/70 text-blue-300 shadow-sm" data-category="All">All</button>
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-medium bg-[#121824] border-[#222d3e] text-slate-400 hover:text-slate-200 hover:border-[#334259]" data-category="High-End Devices">High-End Devices</button>
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-medium bg-[#121824] border-[#222d3e] text-slate-400 hover:text-slate-200 hover:border-[#334259]" data-category="Machineries">Machineries</button>
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-medium bg-[#121824] border-[#222d3e] text-slate-400 hover:text-slate-200 hover:border-[#334259]" data-category="Electronics">Electronics</button>
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-medium bg-[#121824] border-[#222d3e] text-slate-400 hover:text-slate-200 hover:border-[#334259]" data-category="Electronic Components">Electronic Components</button>
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-medium bg-[#121824] border-[#222d3e] text-slate-400 hover:text-slate-200 hover:border-[#334259]" data-category="Vehicles">Vehicles</button>
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-medium bg-[#121824] border-[#222d3e] text-slate-400 hover:text-slate-200 hover:border-[#334259]" data-category="Appliances">Appliances</button>
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-medium bg-[#121824] border-[#222d3e] text-slate-400 hover:text-slate-200 hover:border-[#334259]" data-category="Science & Concepts">Science &amp; Concepts</button>
+            <button type="button" class="px-2.5 py-1 text-[10px] rounded-md whitespace-nowrap transition-all border font-medium bg-[#121824] border-[#222d3e] text-slate-400 hover:text-slate-200 hover:border-[#334259]" data-category="Medical Devices">Medical Devices</button>
           </div>
         </div>
 
@@ -1028,6 +1037,7 @@
                 class="w-full bg-[#141b27] border border-[#273449] focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition-all cursor-pointer">
                 <option value="Machineries">Machineries (Renewable Energy, Heavy Plant, Turbines)</option>
                 <option value="Electronics">Electronics (Computers, Mobile Devices, Displays)</option>
+                <option value="Electronic Components">Electronic Components (Resistors, Capacitors, ICs, Transistors)</option>
                 <option value="Vehicles">Vehicles (Airplanes, Automobiles, Bicycles, Marine)</option>
                 <option value="High-End Devices">High-End Devices (Smartwatches, Wireless Earbuds, 3D Printers, Robotics)</option>
                 <option value="Medical Devices">Medical Devices (MRI, CT Scanner, Dialysis)</option>
@@ -1037,7 +1047,7 @@
               </select>
             </div>
           </div>
-//
+
           <div>
             <label for="sugParts" class="block text-xs font-semibold text-slate-200 mb-1.5">
               Key Components / Sub-assemblies to Break Down <span class="text-rose-400">*</span>
@@ -1123,9 +1133,80 @@
 
   <!-- Modular Application Scripts -->
   <script src="materials.js"></script>
+  <script>
+    // =========================================================================
+    // PART 1: OPTIONAL PER-PART MATERIAL REALISM (SCHEMA EXTENSION)
+    // =========================================================================
+    // In objects.js, each part can optionally specify `metalness` and `roughness` (0-1).
+    // The mesh/material creation code uses a part's own metalness/roughness if provided,
+    // otherwise falling back to standard defaults (roughness: 0.5, metalness: 0.3)
+    // so every existing object keeps working unchanged.
+    if (typeof createRealisticMaterial === 'function') {
+      const _baseCreateRealisticMaterial = createRealisticMaterial;
+      createRealisticMaterial = function (part) {
+        const mat = _baseCreateRealisticMaterial(part);
+        if (part && typeof part === 'object') {
+          if (part.metalness !== undefined) {
+            mat.metalness = part.metalness;
+          } else if (mat.metalness === undefined) {
+            mat.metalness = 0.3;
+          }
+
+          if (part.roughness !== undefined) {
+            mat.roughness = part.roughness;
+          } else if (mat.roughness === undefined) {
+            mat.roughness = 0.5;
+          }
+
+          if (mat.metalness > 0.5) {
+            mat.envMapIntensity = 0.35;
+          }
+        }
+        return mat;
+      };
+    }
+
+    // Direct mesh and material helper for standalone/POC renderer compatibility
+    function createPartMaterial(part) {
+      return new THREE.MeshStandardMaterial({
+        color: part.color,
+        roughness: part.roughness !== undefined ? part.roughness : 0.5,
+        metalness: part.metalness !== undefined ? part.metalness : 0.3,
+        wireframe: typeof window !== 'undefined' && window.isWireframe ? window.isWireframe : false,
+        transparent: !!part.transparent,
+        opacity: part.opacity !== undefined ? part.opacity : 1.0,
+      });
+    }
+
+    function createPartMesh(part, geometry) {
+      const mat = createPartMaterial(part);
+      return new THREE.Mesh(geometry, mat);
+    }
+  </script>
   <script src="components.js"></script>
   <script src="quiz.js"></script>
   <script src="app.js"></script>
+  <script>
+    // Ensure Electronic Components category tab is positioned right after Electronics and synced
+    if (typeof getCategoryTabs === 'function') {
+      const _origGetCategoryTabs = getCategoryTabs;
+      getCategoryTabs = function () {
+        const tabs = _origGetCategoryTabs();
+        if (tabs.includes('Electronic Components')) {
+          const list = tabs.filter(t => t !== 'Electronic Components');
+          const elecIdx = list.indexOf('Electronics');
+          if (elecIdx !== -1) {
+            list.splice(elecIdx + 1, 0, 'Electronic Components');
+            return list;
+          }
+        }
+        return tabs;
+      };
+      if (typeof renderCategoryTabs === 'function') {
+        renderCategoryTabs();
+      }
+    }
+  </script>
 </body>
 
 </html>

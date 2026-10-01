@@ -134,9 +134,16 @@ const PRESET_KEYS = ['studio', 'darkroom', 'cyber'];
 let currentPresetIndex = 0;
 
 // API integration with graceful local fallback
-const API_URL = window.location.protocol.startsWith('http')
-  ? '/api/explain'
-  : 'http://localhost:3001/api/explain';
+const API_URL = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:3001/api/explain';
+  if (window.location.port === '3001') return '/api/explain';
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:3001/api/explain';
+  }
+  if (window.location.protocol.startsWith('http')) return '/api/explain';
+  return 'http://localhost:3001/api/explain';
+})();
+
 var descriptionCache = {};
 window.descriptionCache = descriptionCache;
 
@@ -146,9 +153,48 @@ window.currentExplanationLevel = currentExplanationLevel;
 let currentlyDisplayedPart = null;
 let currentlyDisplayedMesh = null;
 
+// High-fidelity instant local fallback description generator for Simple vs Technical levels
+function getLocalFallbackDescription(objectId, partId, objectLabel, partName, level = currentExplanationLevel) {
+  const obj = (typeof OBJECTS !== 'undefined') ? OBJECTS[objectId] : null;
+  let part = null;
+  if (obj && Array.isArray(obj.parts)) {
+    part = obj.parts.find((p) => p.id === partId || p.name === partName);
+  }
+  if (!part && currentlyDisplayedPart && (currentlyDisplayedPart.id === partId || currentlyDisplayedPart.name === partName)) {
+    part = currentlyDisplayedPart;
+  }
+  if (!part && obj?.parts?.length > 0) {
+    part = obj.parts[0];
+  }
+
+  const name = partName || part?.name || 'Component';
+  const label = objectLabel || obj?.label || 'Assembly';
+  const baseDesc =
+    part?.description ||
+    part?.explanation ||
+    `Essential component of ${label}.`;
+
+  let descText = '';
+  if (level === 'technical') {
+    descText = part?.technical || baseDesc;
+  } else {
+    descText = part?.simple || baseDesc;
+  }
+
+  return {
+    name: name,
+    description: descText,
+    source: 'local-fallback',
+    level: level,
+  };
+}
+window.getLocalFallbackDescription = getLocalFallbackDescription;
+
 async function getDescription(objectId, partId, objectLabel, partName, level = currentExplanationLevel) {
   const cacheKey = `${objectId}:${partId}:${level}`;
-  if (descriptionCache[cacheKey]) return descriptionCache[cacheKey];
+  if (descriptionCache[cacheKey] && descriptionCache[cacheKey].source !== 'local-fallback') {
+    return descriptionCache[cacheKey];
+  }
 
   try {
     const controller = new AbortController();
@@ -162,10 +208,15 @@ async function getDescription(objectId, partId, objectLabel, partName, level = c
     clearTimeout(timeoutId);
     if (!res.ok) throw new Error('Network error');
     const data = await res.json();
-    descriptionCache[cacheKey] = data;
-    return data;
+    if (data && data.description && data.description.trim().length > 0) {
+      descriptionCache[cacheKey] = data;
+      return data;
+    }
+    throw new Error('Empty description');
   } catch (err) {
-    return null;
+    const fallback = getLocalFallbackDescription(objectId, partId, objectLabel, partName, level);
+    descriptionCache[cacheKey] = fallback;
+    return fallback;
   }
 }
 window.getDescription = getDescription;
@@ -173,155 +224,138 @@ window.getDescription = getDescription;
 // -------------------------------------------------------------
 // HELPER FUNCTIONS: Clean Engineering Formatting
 // -------------------------------------------------------------
-function getPartCategory(part) {
+function getPartCategory(part, objectId = currentObjectId) {
+  if (!part) return 'Component Specification';
+  if (part.partCategory) return part.partCategory;
+
+  const obj = (typeof OBJECTS !== 'undefined' && objectId) ? OBJECTS[objectId] : null;
+  const objCat = obj?.category || '';
   const name = (part.name || '').toLowerCase();
-  if (
-    name.includes('driver') ||
-    name.includes('speaker') ||
-    name.includes('transducer') ||
-    name.includes('audio')
-  ) {
-    return 'Acoustics & Transducers';
+  const pid = (part.id || '').toLowerCase();
+
+  // Science & Concepts: Astronomy
+  if (objectId === 'solar-system' || name.includes('planet') || name.includes('sun')) {
+    if (pid === 'sun' || name.includes('sun')) return 'G-Type Main-Sequence Star';
+    if (pid.includes('ring')) return 'Planetary Ring System';
+    if (pid === 'pluto' || name.includes('pluto')) return 'Kuiper Belt Dwarf Planet';
+    if (['jupiter', 'saturn'].includes(pid)) return 'Gas Giant Planet';
+    if (['uranus', 'neptune'].includes(pid)) return 'Ice Giant Planet';
+    return 'Terrestrial Rocky Planet';
+  }
+
+  // Science & Concepts: Quantum Physics
+  if (objectId === 'atom' || name.includes('nucleus') || name.includes('electron')) {
+    if (pid === 'nucleus' || name.includes('nucleus')) return 'Atomic Nucleus (Baryons)';
+    return 'Subatomic Lepton';
+  }
+
+  // Science & Concepts: Anatomy
+  if (objectId === 'human-heart' || name.includes('ventricle') || name.includes('atrium') || name.includes('aorta')) {
+    if (pid.includes('ventricle')) return 'Ventricular Pumping Chamber';
+    if (pid.includes('atrium')) return 'Atrial Inflow Chamber';
+    if (pid === 'aorta') return 'Systemic Elastic Artery';
+    return 'Cardiovascular Conduit';
+  }
+
+  if (objectId === 'human-eye' || name.includes('cornea') || name.includes('retina') || name.includes('iris') || name.includes('lens')) {
+    if (pid === 'cornea') return 'Anterior Refractive Media';
+    if (pid === 'iris') return 'Muscular Pupillary Aperture';
+    if (pid === 'lens') return 'Accommodative Biconvex Lens';
+    if (pid === 'retina') return 'Photoreceptive Neuroepithelium';
+    if (pid === 'optic-nerve') return 'Cranial Nerve II (Visual Pathway)';
+    return 'Ocular Anatomy';
+  }
+
+  // Electronic Components
+  if (objCat === 'Electronic Components') {
+    if (objectId === 'resistor') return pid.includes('band') ? 'EIA Color Code Standard' : (pid.includes('lead') ? 'Axial Terminal Lead' : 'Passive Resistive Element');
+    if (objectId === 'electrolytic-capacitor') return pid.includes('lead') ? 'Radial Terminal Pin' : (pid.includes('vent') ? 'Safety Relief Vent' : 'Polarized Electrolytic Storage');
+    if (objectId === 'transistor') return pid.includes('lead') ? 'Semiconductor Leadframe' : 'Bipolar Junction Transistor (BJT)';
+    if (objectId === 'diode') return pid.includes('lead') ? 'Axial Terminal Lead' : 'P-N Junction Rectifier';
+    if (objectId === 'led') return pid.includes('lead') ? 'Polarized Terminal Pin' : 'Optoelectronic Solid-State Emitter';
+    if (objectId === 'ic-chip') return pid.includes('pin') ? 'Through-Hole Terminal Pin' : 'Monolithic Integrated Circuit';
+    if (objectId === 'relay') return pid.includes('pin') ? 'Heavy-Duty Switching Pin' : (pid.includes('coil') ? 'Electromagnetic Solenoid' : 'Electromechanical Switch');
+    if (objectId === 'transformer') return pid.includes('pin') ? 'Solderable Transformer Pin' : (pid.includes('coil') ? 'Inductive Magnet Winding' : 'Magnetic Flux Core');
+    if (objectId === 'fuse') return pid.includes('cap') ? 'Conductive End Ferrule' : (pid.includes('filament') ? 'Calibrated Fusible Element' : 'Overcurrent Protection Device');
+  }
+
+  // Fallback checks
+  if (name.includes('driver') || name.includes('speaker') || name.includes('transducer') || name.includes('audio')) {
+    return 'Acoustic Sound Transducers';
   }
   if (name.includes('crown') || name.includes('dial')) {
-    return 'Kinematics & Micro-Mechanics';
+    return 'Rotary Precision Controller';
   }
   if (name.includes('sensor') || name.includes('heart-rate') || name.includes('biometric')) {
-    return 'Optics & Bio-Sensors';
+    return 'Biometric & Optical Sensors';
   }
   if (name.includes('strap') || name.includes('band')) {
-    return 'Ergonomics & Fasteners';
+    return 'Ergonomic Wearable Band';
   }
-  if (
-    name.includes('blade') ||
-    name.includes('nacelle') ||
-    name.includes('rotor') ||
-    name.includes('hub')
-  ) {
+  if (name.includes('blade') || name.includes('nacelle') || name.includes('rotor') || name.includes('hub')) {
     return 'Aerodynamics & Turbomachinery';
   }
-  if (
-    name.includes('photovoltaic') ||
-    name.includes('cell') ||
-    name.includes('solar') ||
-    name.includes('junction')
-  ) {
-    return 'Renewable Energy & Power';
+  if (name.includes('photovoltaic') || name.includes('cell') || name.includes('solar') || name.includes('junction')) {
+    return 'Photovoltaic Power Generation';
   }
-  if (
-    name.includes('tower') ||
-    name.includes('foundation') ||
-    name.includes('bracket') ||
-    name.includes('mount')
-  ) {
-    return 'Structural & Foundation';
+  if (name.includes('foundation') || name.includes('bracket') || name.includes('mount') || name.includes('stand')) {
+    return 'Structural Support & Foundation';
   }
-  if (
-    name.includes('fuselage') ||
-    name.includes('wing') ||
-    name.includes('fin') ||
-    name.includes('gantry') ||
-    name.includes('bore') ||
-    name.includes('frame') ||
-    name.includes('body') ||
-    name.includes('case') ||
-    name.includes('chassis') ||
-    name.includes('casing') ||
-    name.includes('shell') ||
-    name.includes('door') ||
-    name.includes('lid') ||
-    name.includes('saddle') ||
-    name.includes('seat') ||
-    name.includes('bed') ||
-    name.includes('housing')
-  ) {
-    return 'Structural Chassis';
+  if (name.includes('fuselage') || name.includes('wing') || name.includes('fin') || name.includes('gantry') || name.includes('frame') || name.includes('chassis') || name.includes('body') || name.includes('casing') || name.includes('case') || name.includes('door')) {
+    return 'Structural Chassis & Enclosure';
   }
-  if (
-    name.includes('atrium') ||
-    name.includes('ventricle') ||
-    name.includes('aorta') ||
-    name.includes('vein') ||
-    name.includes('artery')
-  ) {
-    return 'Cardiovascular Anatomy';
+  if (name.includes('screen') || name.includes('display') || name.includes('oled') || name.includes('touchscreen')) {
+    return 'Display Panel & Digitizer';
   }
-  if (
-    name.includes('cornea') ||
-    name.includes('iris') ||
-    name.includes('lens') ||
-    name.includes('retina') ||
-    name.includes('optic') ||
-    name.includes('pupil') ||
-    name.includes('sclera')
-  ) {
-    return 'Ocular & Sensory Anatomy';
-  }
-  if (
-    name.includes('screen') ||
-    name.includes('display') ||
-    name.includes('cockpit') ||
-    name.includes('console') ||
-    name.includes('sensor') ||
-    name.includes('glass') ||
-    name.includes('light') ||
-    name.includes('porthole') ||
-    name.includes('backlight') ||
-    name.includes('sun') ||
-    name.includes('earth') ||
-    name.includes('planet') ||
-    name.includes('nucleus') ||
-    name.includes('electron')
-  ) {
-    return 'Optics & Instrumentation';
-  }
-  if (
-    name.includes('cpu') ||
-    name.includes('chip') ||
-    name.includes('processor') ||
-    name.includes('mainboard') ||
-    name.includes('motherboard') ||
-    name.includes('ram') ||
-    name.includes('gpu') ||
-    name.includes('ssd') ||
-    name.includes('disk') ||
-    name.includes('control-panel') ||
-    name.includes('keyboard') ||
-    name.includes('trackpad')
-  ) {
+  if (name.includes('cpu') || name.includes('chip') || name.includes('processor') || name.includes('mainboard') || name.includes('motherboard') || name.includes('ram') || name.includes('gpu') || name.includes('ssd') || name.includes('disk')) {
     return 'Core Silicon & Computing';
   }
-  if (
-    name.includes('fan') ||
-    name.includes('cooler') ||
-    name.includes('heatsink') ||
-    name.includes('coil') ||
-    name.includes('compressor') ||
-    name.includes('pump')
-  ) {
-    return 'Thermal & Electromagnetics';
+  if (name.includes('fan') || name.includes('cooler') || name.includes('heatsink') || name.includes('coil') || name.includes('compressor') || name.includes('pump')) {
+    return 'Thermal & Fluid Dynamics';
   }
-  if (
-    name.includes('wheel') ||
-    name.includes('drum') ||
-    name.includes('motor') ||
-    name.includes('stepper') ||
-    name.includes('extruder') ||
-    name.includes('gear') ||
-    name.includes('pedal') ||
-    name.includes('chain') ||
-    name.includes('engine') ||
-    name.includes('hinge')
-  ) {
-    return 'Kinematics & Motion';
+  if (name.includes('wheel') || name.includes('drum') || name.includes('motor') || name.includes('stepper') || name.includes('extruder') || name.includes('gear') || name.includes('pedal') || name.includes('chain') || name.includes('engine') || name.includes('hinge')) {
+    return 'Kinematics & Powertrain';
   }
   if (name.includes('battery') || name.includes('psu') || name.includes('fuel')) {
-    return 'Power & Energy';
+    return 'Power & Energy Storage';
   }
-  return 'Mechanical Subassembly';
+  return obj?.category ? `${obj.category} Component` : 'Functional Component';
 }
 
-function formatPartDimensions(geomDef) {
+function formatPartDimensions(geomDef, part, objectId = currentObjectId) {
+  if (part && part.dimensions) return part.dimensions;
+
+  // Domain fallback dimensions
+  if (objectId === 'solar-system') {
+    const pid = part?.id;
+    if (pid === 'sun') return 'Ø 1,392,700 km (109 × Earth)';
+    if (pid === 'mercury') return 'Ø 4,879 km (0.38 × Earth)';
+    if (pid === 'venus') return 'Ø 12,104 km (0.95 × Earth)';
+    if (pid === 'earth') return 'Ø 12,742 km (Mean Radius 6,371 km)';
+    if (pid === 'mars') return 'Ø 6,779 km (0.53 × Earth)';
+    if (pid === 'jupiter') return 'Ø 139,820 km (11.0 × Earth)';
+    if (pid === 'saturn') return 'Ø 116,460 km (9.14 × Earth)';
+    if (pid === 'saturn-ring') return 'Outer Span: 282,000 km (Thickness ~10 m)';
+    if (pid === 'uranus') return 'Ø 50,724 km (4.0 × Earth)';
+    if (pid === 'neptune') return 'Ø 49,244 km (3.86 × Earth)';
+    if (pid === 'pluto') return 'Ø 2,377 km (0.19 × Earth)';
+  }
+  if (objectId === 'atom') {
+    if (part?.id === 'nucleus') return 'Ø ~1.75 fm (1.75 × 10⁻¹⁵ m)';
+    return 'Point Particle (< 10⁻¹⁸ m)';
+  }
+  if (objectId === 'human-heart') {
+    if (part?.id?.includes('ventricle')) return '~12 × 8.5 × 6 cm | Wall 10–12 mm';
+    if (part?.id === 'aorta') return 'Lumen Ø 25–30 mm | Length ~30 cm';
+    return 'Volume ~50–70 mL';
+  }
+  if (objectId === 'human-eye') {
+    if (part?.id === 'cornea') return 'Ø 11.5 mm | Central Thickness 0.52 mm';
+    if (part?.id === 'lens') return 'Ø 10.0 mm | Axial Thickness 4.0 mm';
+    if (part?.id === 'retina') return 'Surface Area ~1,100 mm²';
+    return 'Axial Length ~24 mm';
+  }
+
   if (!geomDef || !geomDef.args) return 'Standard CAD Size';
   const a = geomDef.args;
   if (geomDef.type === 'box') {
@@ -342,30 +376,59 @@ function formatPartDimensions(geomDef) {
   return 'Standard Module';
 }
 
-function getPartFinish(part) {
+function getPartFinish(part, objectId = currentObjectId) {
+  if (!part) return 'Standard Finish';
+  if (part.finish) return part.finish;
+
   const n = (part.name || '').toLowerCase();
+  const pid = (part.id || '').toLowerCase();
   const mt = part.materialType || '';
-  if (n.includes('strap') || n.includes('band'))
-    return 'Fluoroelastomer Sports Polymer';
-  if (n.includes('shell') || n.includes('earbud'))
-    return 'High-Gloss Ceramic Polycarbonate';
-  if (n.includes('driver') || n.includes('diaphragm'))
-    return 'Titanium Composite & Neodymium N52';
-  if (n.includes('crown') || n.includes('titanium'))
-    return 'Aerospace Grade-5 Titanium';
-  if (n.includes('sensor') || n.includes('ceramic'))
-    return 'Zirconia Ceramic & Sapphire Glass';
-  if (mt === 'metal' || n.includes('heatsink') || n.includes('bracket') || n.includes('stand'))
-    return 'Anodized 6061-T6 Aluminum';
-  if (mt === 'pcb' || n.includes('motherboard') || n.includes('mainboard'))
-    return 'FR-4 Multi-Layer Solder Mask';
-  if (mt === 'glass' || n.includes('screen') || n.includes('glass'))
-    return 'Aluminosilicate Tempered Glass';
-  if (n.includes('fan') || n.includes('shroud') || n.includes('case'))
-    return 'Injection Molded Polymer';
-  if (n.includes('tire') || n.includes('grip') || n.includes('damper'))
-    return 'High-Traction Vulcanized Rubber';
-  return 'Engineering Satin Matte Finish';
+
+  // Solar system
+  if (objectId === 'solar-system') {
+    if (pid === 'sun') return 'Gaseous Plasma & Photosphere';
+    if (pid === 'venus') return 'Supercritical CO2 & Sulfuric Acid Clouds';
+    if (pid === 'earth') return 'Liquid Hydrosphere & Silicate Crust';
+    if (pid === 'mars') return 'Ferric Oxide Regolith & Basalt';
+    if (pid === 'jupiter') return 'Dense Hydrogen-Helium Gas Belts';
+    if (pid === 'saturn') return 'Ammonia Ice Haze & Chromophores';
+    if (pid === 'saturn-ring') return 'Micro-to-Metric Water-Ice Clasts';
+    if (pid === 'uranus') return 'Hydrogen, Helium & Methane Haze';
+    if (pid === 'neptune') return 'Deep Azure Methane Fluid Mantle';
+    if (pid === 'pluto') return 'Nitrogen, Methane & Water-Ice Regolith';
+    return 'Silicate & Basaltic Regolith';
+  }
+
+  // Atom
+  if (objectId === 'atom') {
+    if (pid === 'nucleus') return 'Strong-Force Bound Nucleons';
+    return 'Quantum Probability Wavepacket';
+  }
+
+  // Anatomy
+  if (objectId === 'human-heart') {
+    if (pid.includes('ventricle') || pid.includes('atrium')) return 'Cardiac Striated Myocardium';
+    return 'Vascular Endothelium & Smooth Muscle';
+  }
+  if (objectId === 'human-eye') {
+    if (pid === 'cornea') return 'Avascular Collagenous Lamellae';
+    if (pid === 'iris') return 'Chromatophore Melanin Pigment';
+    if (pid === 'lens') return 'Crystalline Protein Fiber Matrix';
+    if (pid === 'retina') return 'Neurosensory Photoreceptor Layer';
+    if (pid === 'optic-nerve') return 'Myelinated Oligodendrocyte Sheath';
+  }
+
+  if (n.includes('strap') || n.includes('band')) return 'Fluoroelastomer Sports Polymer';
+  if (n.includes('shell') || n.includes('earbud')) return 'High-Gloss Ceramic Polycarbonate';
+  if (n.includes('driver') || n.includes('diaphragm')) return 'Titanium Composite & Neodymium N52';
+  if (n.includes('crown') || n.includes('titanium')) return 'Aerospace Grade-5 Titanium';
+  if (n.includes('sensor') || n.includes('ceramic')) return 'Zirconia Ceramic & Sapphire Glass';
+  if (mt === 'metal' || n.includes('heatsink') || n.includes('bracket') || n.includes('stand')) return 'Anodized 6061-T6 Aluminum';
+  if (mt === 'pcb' || n.includes('motherboard') || n.includes('mainboard')) return 'FR-4 Multi-Layer Solder Mask';
+  if (mt === 'glass' || n.includes('screen') || n.includes('glass')) return 'Aluminosilicate Tempered Glass';
+  if (n.includes('fan') || n.includes('shroud') || n.includes('case')) return 'Injection Molded Polymer';
+  if (n.includes('tire') || n.includes('grip') || n.includes('damper')) return 'High-Traction Vulcanized Rubber';
+  return 'Precision Engineered Finish';
 }
 
 // -------------------------------------------------------------
@@ -848,14 +911,21 @@ function showExplanation(part, mesh) {
   currentlyDisplayedMesh = mesh;
   if (typeof updateChatContext === 'function') updateChatContext();
 
-  const category = getPartCategory(part);
-  const dimensions = formatPartDimensions(part.geometry);
-  const finish = getPartFinish(part);
+  const category = getPartCategory(part, currentObjectId);
+  const dimensions = formatPartDimensions(part.geometry, part, currentObjectId);
+  const finish = getPartFinish(part, currentObjectId);
   const hex = '#' + part.color.toString(16).padStart(6, '0');
-  const initialDesc =
-    part.description ||
-    part.explanation ||
-    `Core engineered component of ${OBJECTS[currentObjectId].label}.`;
+  const initialData = getLocalFallbackDescription(
+    currentObjectId,
+    part.id,
+    OBJECTS[currentObjectId]?.label || 'Object',
+    part.name,
+    currentExplanationLevel
+  );
+  const cacheKey = `${currentObjectId}:${part.id}:${currentExplanationLevel}`;
+  const initialDesc = (descriptionCache[cacheKey] && descriptionCache[cacheKey].description)
+    ? descriptionCache[cacheKey].description
+    : initialData.description;
 
   // Update Inspector Panel
   const actName = document.getElementById('activePartName');
@@ -948,20 +1018,26 @@ function setExplanationLevel(level) {
     }
   }
 
-  // Switching the toggle while a part is already selected should immediately re-fetch (or pull from cache) and update the displayed explanation for the new level
-  const targetPart = currentlyDisplayedPart || (selectedMesh && selectedMesh.userData?.partData);
+  // Switching the toggle while a part is already selected immediately updates the displayed explanation for the new level
+  const targetPart = currentlyDisplayedPart || (selectedMesh && selectedMesh.userData?.partData) || (OBJECTS[currentObjectId]?.parts?.[0]);
   if (targetPart) {
     const objectLabel = OBJECTS[currentObjectId]?.label || 'Object';
     const expT = document.getElementById('explanationText');
     const sidebarDesc = document.getElementById('sidebarPartDesc');
 
     const cacheKey = `${currentObjectId}:${targetPart.id}:${level}`;
-    if (descriptionCache[cacheKey]) {
-      const cached = descriptionCache[cacheKey];
-      if (expT && cached.description) expT.textContent = cached.description;
-      if (sidebarDesc && cached.description) sidebarDesc.textContent = cached.description;
-    } else {
-      if (expT) expT.textContent = `Loading ${level} explanation...`;
+    
+    // 1. Instantly display cached description OR instant formatted local fallback (NEVER STUCK ON LOADING!)
+    const instantFallback = getLocalFallbackDescription(currentObjectId, targetPart.id, objectLabel, targetPart.name, level);
+    const displayText = (descriptionCache[cacheKey] && descriptionCache[cacheKey].description)
+      ? descriptionCache[cacheKey].description
+      : instantFallback.description;
+
+    if (expT) expT.textContent = displayText;
+    if (sidebarDesc) sidebarDesc.textContent = displayText;
+
+    // 2. If not already enhanced by live API, query backend asynchronously in background without blocking UI
+    if (!descriptionCache[cacheKey] || descriptionCache[cacheKey].source === 'local-fallback') {
       getDescription(currentObjectId, targetPart.id, objectLabel, targetPart.name, level)
         .then((res) => {
           if (currentExplanationLevel === level && res && res.description) {
@@ -970,7 +1046,7 @@ function setExplanationLevel(level) {
           }
         })
         .catch(() => {
-          if (expT && targetPart.description) expT.textContent = targetPart.description;
+          // Fallback is already displayed cleanly
         });
     }
   }
@@ -1012,9 +1088,15 @@ window.checkFirstVisitOnboarding = checkFirstVisitOnboarding;
 let chatHistory = [];
 let isChatSending = false;
 
-const CHAT_API_URL = window.location.protocol.startsWith('http')
-  ? '/api/chat'
-  : 'http://localhost:3001/api/chat';
+const CHAT_API_URL = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:3001/api/chat';
+  if (window.location.port === '3001') return '/api/chat';
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:3001/api/chat';
+  }
+  if (window.location.protocol.startsWith('http')) return '/api/chat';
+  return 'http://localhost:3001/api/chat';
+})();
 
 function updateChatContext() {
   const modelEl = document.getElementById('chatActiveContextModel');
@@ -1678,6 +1760,10 @@ function animate() {
     }
   }
 
+  if (isCalipersActive && (selectedMesh || hoveredMesh)) {
+    updateCaliperLines(selectedMesh || hoveredMesh);
+  }
+
   if (controls) controls.update();
   if (renderer && scene && camera) renderer.render(scene, camera);
   updateFloatingLabels();
@@ -1726,7 +1812,7 @@ function renderPartsList() {
   }
 
   visibleParts.forEach((part, index) => {
-    const category = getPartCategory(part);
+    const category = getPartCategory(part, currentObjectId);
     const hex = '#' + part.color.toString(16).padStart(6, '0');
     const mesh = activeMeshes.find((m) => m.userData.partData.id === part.id);
     const isHidden = mesh && !mesh.visible;
@@ -1850,9 +1936,9 @@ function renderSpecificationsTable() {
   tableBody.innerHTML = '';
 
   obj.parts.forEach((part, index) => {
-    const category = getPartCategory(part);
-    const dimensions = formatPartDimensions(part.geometry);
-    const finish = getPartFinish(part);
+    const category = getPartCategory(part, currentObjectId);
+    const dimensions = formatPartDimensions(part.geometry, part, currentObjectId);
+    const finish = getPartFinish(part, currentObjectId);
     const hex = '#' + part.color.toString(16).padStart(6, '0');
 
     const tr = document.createElement('tr');
