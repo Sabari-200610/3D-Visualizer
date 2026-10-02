@@ -1,0 +1,25 @@
+{
+  "name": "3d-visualizer",
+  "version": "1.0.0",
+  "description": "Interactive 3D Mechanical & Engineering Visualizer featuring procedural assemblies, exploded kinematics, dimensional calipers, and AI-powered hardware inspection.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "check": "node -c app.js components.js materials.js objects.js quiz.js server/server.js"
+  },
+  "keywords": [
+    "threejs",
+    "webgl",
+    "cad",
+    "3d-visualizer",
+    "exploded-view",
+    "engineering",
+    "calipers",
+    "hardware",
+    "claude-api",
+    "procedural-modeling"
+  ],
+  "author": "Engineering CAD Team",
+  "license": "MIT"
+}

@@ -76,7 +76,28 @@ function buildQuizQuestions() {
     const shuffledOthers = [...otherParts].sort(() => 0.5 - Math.random());
     const chosenDistractors = shuffledOthers.slice(0, 3).map((p) => p.name);
 
-    // Combined options with correct answer + distractors (minimum 2 options)
+    // If fewer than 3 distractors available, supplement from other models for balanced 4-choice options
+    if (chosenDistractors.length < 3 && typeof OBJECTS !== 'undefined') {
+      const extraCandidates = [];
+      for (const [oId, oData] of Object.entries(OBJECTS)) {
+        if (oId !== currentObjectId && oData && oData.parts) {
+          for (const op of oData.parts) {
+            if (op.name && op.name !== part.name && !chosenDistractors.includes(op.name)) {
+              extraCandidates.push(op.name);
+            }
+          }
+        }
+      }
+      extraCandidates.sort(() => 0.5 - Math.random());
+      while (chosenDistractors.length < 3 && extraCandidates.length > 0) {
+        const candidate = extraCandidates.pop();
+        if (!chosenDistractors.includes(candidate)) {
+          chosenDistractors.push(candidate);
+        }
+      }
+    }
+
+    // Combined options with correct answer + distractors (minimum 2 options, ideally 4)
     const allOptions = [part.name, ...chosenDistractors].sort(() => 0.5 - Math.random());
 
     quizQuestions.push({

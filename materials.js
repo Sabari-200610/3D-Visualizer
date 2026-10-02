@@ -766,6 +766,19 @@ function createRealisticMaterial(part) {
     }
   }
 
+  // Explicit per-part property overrides (Schema extension)
+  if (part && typeof part === 'object') {
+    if (part.metalness !== undefined) metalness = part.metalness;
+    if (part.roughness !== undefined) roughness = part.roughness;
+    if (part.clearcoat !== undefined) clearcoat = part.clearcoat;
+    if (part.clearcoatRoughness !== undefined) clearcoatRoughness = part.clearcoatRoughness;
+    if (part.transmission !== undefined) transmission = part.transmission;
+    if (part.ior !== undefined) ior = part.ior;
+    if (part.thickness !== undefined) thickness = part.thickness;
+    if (part.emissive !== undefined) emissiveColor = part.emissive;
+    if (part.emissiveIntensity !== undefined) emissiveIntensity = part.emissiveIntensity;
+  }
+
   const activeWireframe =
     typeof window !== 'undefined' && typeof window.isWireframe !== 'undefined'
       ? window.isWireframe
@@ -805,3 +818,20 @@ function createRealisticMaterial(part) {
 
   return new THREE.MeshPhysicalMaterial(matParams);
 }
+
+// Standalone direct mesh and material helpers for POC / compatibility
+function createPartMaterial(part) {
+  return createRealisticMaterial(part);
+}
+
+function createPartMesh(part, geometry) {
+  const mat = createPartMaterial(part);
+  return new THREE.Mesh(geometry, mat);
+}
+
+if (typeof window !== 'undefined') {
+  window.createRealisticMaterial = createRealisticMaterial;
+  window.createPartMaterial = createPartMaterial;
+  window.createPartMesh = createPartMesh;
+}
+

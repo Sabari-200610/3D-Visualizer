@@ -585,6 +585,14 @@ function initThree() {
 
   // Event Listeners
   window.addEventListener('resize', onWindowResize);
+  const unlockAudio = () => {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  };
+  window.addEventListener('pointerdown', unlockAudio, { once: true });
+  window.addEventListener('keydown', unlockAudio, { once: true });
+
   if (mount) {
     mount.addEventListener('mousemove', onMouseMove);
     mount.addEventListener('pointerdown', (e) => {
@@ -598,7 +606,7 @@ function initThree() {
 
   // Keyboard Shortcuts
   window.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
     if (e.key === ' ' || e.code === 'Space') {
       e.preventDefault();
       toggleAutoRotate();
@@ -614,6 +622,16 @@ function initThree() {
       toggleCalipers();
     } else if (e.key === 'l' || e.key === 'L') {
       cycleLightingPreset();
+    } else if (e.key === 'p' || e.key === 'P') {
+      export3DSnapshot();
+    } else if (e.key === '1') {
+      setCameraPreset('iso');
+    } else if (e.key === '2') {
+      setCameraPreset('top');
+    } else if (e.key === '3') {
+      setCameraPreset('front');
+    } else if (e.key === '4') {
+      setCameraPreset('side');
     }
   });
 
@@ -689,7 +707,7 @@ function loadObject(objId) {
     sumZ / objData.parts.length
   );
 
-  const groupForBounds = new THREE.Group();
+  const bbox = new THREE.Box3();
 
   // Build authentic procedural components
   objData.parts.forEach((part) => {
@@ -703,6 +721,10 @@ function loadObject(objId) {
       if (child.isMesh) {
         child.castShadow = !part.transparent;
         child.receiveShadow = true;
+        if (child.material) {
+          child.userData.origTransparent = child.material.transparent;
+          child.userData.origOpacity = child.material.opacity !== undefined ? child.material.opacity : 1.0;
+        }
       }
     });
 
@@ -727,11 +749,10 @@ function loadObject(objId) {
 
     scene.add(partObj);
     activeMeshes.push(partObj);
-    groupForBounds.add(partObj.clone());
+    bbox.expandByObject(partObj);
   });
 
   // Calculate assembled bounding box to anchor contact shadow perfectly
-  const bbox = new THREE.Box3().setFromObject(groupForBounds);
   const bottomY = bbox.min.y;
   const sizeX = bbox.max.x - bbox.min.x;
   const sizeZ = bbox.max.z - bbox.min.z;
@@ -840,6 +861,8 @@ function toggleCalipers() {
 
   const btn = document.getElementById('toggleCalipersBtn');
   const txt = document.getElementById('calipersBtnText');
+  const hudBadge = document.getElementById('caliperHudBadge');
+
   if (btn) {
     if (isCalipersActive) {
       btn.classList.add('bg-cyan-600/30', 'border-cyan-500/70', 'text-cyan-300');
@@ -850,6 +873,7 @@ function toggleCalipers() {
       btn.classList.remove('bg-cyan-600/30', 'border-cyan-500/70', 'text-cyan-300');
       if (txt) txt.textContent = 'Calipers (3D)';
       removeCaliperLines();
+      if (hudBadge) hudBadge.classList.add('hidden');
     }
   }
 }
@@ -858,8 +882,15 @@ function removeCaliperLines() {
   if (!caliperVisualGroup) return;
   while (caliperVisualGroup.children.length > 0) {
     const c = caliperVisualGroup.children[0];
+    if (c.geometry) c.geometry.dispose();
+    if (c.material) {
+      if (Array.isArray(c.material)) c.material.forEach((m) => m.dispose());
+      else c.material.dispose();
+    }
     caliperVisualGroup.remove(c);
   }
+  const hudBadge = document.getElementById('caliperHudBadge');
+  if (hudBadge) hudBadge.classList.add('hidden');
 }
 
 function updateCaliperLines(targetObj) {
@@ -899,6 +930,18 @@ function updateCaliperLines(targetObj) {
   const ticksGeom = new THREE.BufferGeometry().setFromPoints(points);
   const ticks = new THREE.LineSegments(ticksGeom, tickMat);
   caliperVisualGroup.add(ticks);
+
+  // Update Caliper HUD Badge
+  const hudBadge = document.getElementById('caliperHudBadge');
+  const hudText = document.getElementById('caliperHudText');
+  if (hudBadge && hudText) {
+    const pName = targetObj.userData?.partData?.name || 'Component';
+    const lx = Math.round(size.x * 100);
+    const ly = Math.round(size.y * 100);
+    const lz = Math.round(size.z * 100);
+    hudText.innerHTML = `📐 <strong>${pName}</strong>: ${lx} × ${ly} × ${lz} mm (Bounding Box)`;
+    hudBadge.classList.remove('hidden');
+  }
 }
 
 // -------------------------------------------------------------
@@ -1458,6 +1501,8 @@ function resetCameraView() {
 
   const slider = document.getElementById('explodeSlider');
   if (slider) slider.value = 0;
+  const label = document.getElementById('explodeFactorLabel');
+  if (label) label.textContent = '0% (Assembled)';
   updateToggleButtonUI();
 
   if (selectedMesh) {
@@ -1535,10 +1580,17 @@ function updateXRayVisuals() {
 
     partObj.traverse((child) => {
       if (child.isMesh && child.material) {
+        if (child.userData.origTransparent === undefined) {
+          child.userData.origTransparent = child.material.transparent;
+        }
+        if (child.userData.origOpacity === undefined) {
+          child.userData.origOpacity = child.material.opacity !== undefined ? child.material.opacity : 1.0;
+        }
+
         if (isXRayMode) {
           if (isTarget || !selectedMesh) {
             child.material.transparent = child.userData.origTransparent || false;
-            child.material.opacity = child.userData.origOpacity !== undefined ? child.userData.origOpacity : 1.0;
+            child.material.opacity = child.userData.origOpacity;
             child.material.depthWrite = true;
           } else {
             child.material.transparent = true;
@@ -1547,7 +1599,7 @@ function updateXRayVisuals() {
           }
         } else {
           child.material.transparent = child.userData.origTransparent || false;
-          child.material.opacity = child.userData.origOpacity !== undefined ? child.userData.origOpacity : 1.0;
+          child.material.opacity = child.userData.origOpacity;
           child.material.depthWrite = true;
         }
       }
@@ -1760,10 +1812,6 @@ function animate() {
     }
   }
 
-  if (isCalipersActive && (selectedMesh || hoveredMesh)) {
-    updateCaliperLines(selectedMesh || hoveredMesh);
-  }
-
   if (controls) controls.update();
   if (renderer && scene && camera) renderer.render(scene, camera);
   updateFloatingLabels();
@@ -1784,6 +1832,8 @@ function updateUI() {
   if (badge) badge.textContent = `${obj.parts.length} parts`;
   const tblName = document.getElementById('tableModelName');
   if (tblName) tblName.textContent = obj.label;
+  const tblCount = document.getElementById('tableItemCount');
+  if (tblCount) tblCount.textContent = `${obj.parts.length} Components Listed`;
 
   renderPartsList();
   renderSpecificationsTable();
@@ -1987,7 +2037,17 @@ function renderSpecificationsTable() {
 // MODEL SELECTOR & CATEGORIES (EVEN CARDS WITH ICONS)
 // -------------------------------------------------------------
 function getCategoryTabs() {
-  const preferred = ['All', 'High-End Devices', 'Machineries', 'Electronics', 'Vehicles', 'Appliances', 'Science & Concepts', 'Medical Devices'];
+  const preferred = [
+    'All',
+    'High-End Devices',
+    'Machineries',
+    'Electronics',
+    'Electronic Components',
+    'Vehicles',
+    'Appliances',
+    'Science & Concepts',
+    'Medical Devices',
+  ];
   const present = new Set();
   if (typeof OBJECTS !== 'undefined') {
     Object.values(OBJECTS).forEach((o) => {
@@ -2556,6 +2616,108 @@ function handleSuggestionSubmit(e) {
 }
 
 // -------------------------------------------------------------
+// PROFESSIONAL EXPORT & VIEW CONTROLLERS (SNAPSHOT, CSV, PRESETS)
+// -------------------------------------------------------------
+function export3DSnapshot() {
+  playTactileClick(700);
+  if (!renderer || !scene || !camera) return;
+
+  // Render high-res frame
+  renderer.render(scene, camera);
+  const dataURL = renderer.domElement.toDataURL('image/png');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = renderer.domElement.width;
+  canvas.height = renderer.domElement.height;
+  const ctx = canvas.getContext('2d');
+
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0);
+
+    // Subtle CAD overlay branding banner
+    const objLabel = OBJECTS[currentObjectId]?.label || '3D Assembly';
+    ctx.fillStyle = 'rgba(11, 14, 20, 0.88)';
+    ctx.fillRect(0, canvas.height - 48, canvas.width, 48);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 15px "JetBrains Mono", monospace';
+    ctx.fillText(`3D VISUALIZER // ${objLabel.toUpperCase()}`, 24, canvas.height - 18);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('Precision Interactive Assembly & Component Inspector', canvas.width - 340, canvas.height - 18);
+
+    const link = document.createElement('a');
+    link.download = `3D-Visualizer-${currentObjectId}-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast(`Snapshot exported: ${objLabel}`, '📸', 3000);
+  };
+  img.src = dataURL;
+}
+
+function exportBOMToCSV() {
+  playTactileClick(650);
+  const obj = OBJECTS[currentObjectId];
+  if (!obj || !obj.parts) return;
+
+  const escapeCSV = (str) => `"${(str || '').replace(/"/g, '""')}"`;
+
+  const headers = ['Index', 'Part ID', 'Component Name', 'Subsystem', 'Dimensions', 'Finish / Material', 'Functional Summary', 'Technical Description'];
+  const rows = obj.parts.map((p, i) => {
+    const category = getPartCategory(p, currentObjectId);
+    const dimensions = formatPartDimensions(p.geometry, p, currentObjectId);
+    const finish = getPartFinish(p, currentObjectId);
+    return [
+      i + 1,
+      escapeCSV(p.id),
+      escapeCSV(p.name),
+      escapeCSV(category),
+      escapeCSV(dimensions),
+      escapeCSV(finish),
+      escapeCSV(p.description || p.simple || ''),
+      escapeCSV(p.technical || p.description || '')
+    ].join(',');
+  });
+
+  const csvContent = [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${currentObjectId}-Bill-Of-Materials.csv`;
+  link.click();
+  showToast(`Exported BOM CSV for ${obj.label}`, '📥', 3000);
+}
+
+function setCameraPreset(preset) {
+  playTactileClick(620);
+  const objData = OBJECTS[currentObjectId];
+  if (!objData) return;
+  const r = objData.viewRadius || 15;
+  const target = new THREE.Vector3(0, 0, 0);
+  let camPos;
+
+  if (preset === 'top') {
+    camPos = new THREE.Vector3(0, r * 1.25, 0.001);
+  } else if (preset === 'front') {
+    camPos = new THREE.Vector3(0, 0, r * 1.15);
+  } else if (preset === 'side') {
+    camPos = new THREE.Vector3(r * 1.15, 0, 0);
+  } else {
+    // Iso default
+    camPos = new THREE.Vector3(r * 0.72, r * 0.52, r * 0.82);
+  }
+
+  startCameraTransition(camPos, target, 600);
+  const lbl = document.getElementById('cameraViewLabel');
+  if (lbl) {
+    const names = { iso: 'Iso', top: 'Top', front: 'Front', side: 'Side' };
+    lbl.textContent = names[preset] || 'View';
+  }
+}
+
+// -------------------------------------------------------------
 // EVENT HANDLERS & BINDINGS
 // -------------------------------------------------------------
 function setupAppListeners() {
@@ -2689,11 +2851,20 @@ function setupAppListeners() {
     if (codeModal) codeModal.classList.add('hidden');
   });
 
-  document.getElementById('copyCodeBtn')?.addEventListener('click', () => {
+  document.getElementById('copyCodeBtn')?.addEventListener('click', async () => {
     playTactileClick(650);
     const content = document.getElementById('codeModalContent');
     if (content) {
-      navigator.clipboard.writeText(content.textContent);
+      try {
+        await navigator.clipboard.writeText(content.textContent);
+      } catch (err) {
+        const textarea = document.createElement('textarea');
+        textarea.value = content.textContent;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
       const btn = document.getElementById('copyCodeBtn');
       if (btn) {
         const orig = btn.textContent;
@@ -2715,12 +2886,13 @@ function setupAppListeners() {
     document.getElementById('quizModal')?.classList.add('hidden');
   });
 
-  // Global Header Search input
+  // Global Header Search input (Searches Models and Components across ALL models)
   document.getElementById('objectSearchInput')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const query = e.target.value.toLowerCase().trim();
       if (!query) return;
 
+      // 1. Direct model match
       const foundObjKey = Object.keys(OBJECTS).find(
         (k) =>
           k.toLowerCase().includes(query) ||
@@ -2728,19 +2900,22 @@ function setupAppListeners() {
       );
       if (foundObjKey) {
         if (activeCategoryTab !== 'All' && OBJECTS[foundObjKey].category !== activeCategoryTab) {
-          activeCategoryTab = OBJECTS[foundObjKey].category;
+          activeCategoryTab = 'All';
+          renderCategoryTabs();
         }
         switchModel(foundObjKey);
+        showToast(`Loaded "${OBJECTS[foundObjKey].label}"`, '🔍', 2500);
         return;
       }
 
+      // 2. Part match in current model
       const currentObj = OBJECTS[currentObjectId];
       if (currentObj && currentObj.parts) {
         const foundPart = currentObj.parts.find(
           (p) => p.name.toLowerCase().includes(query) || p.id.toLowerCase().includes(query)
         );
         if (foundPart) {
-          const mesh = activeMeshes.find((m) => m.userData.partData.id === foundPart.id);
+          const mesh = activeMeshes.find((m) => m.userData?.partData?.id === foundPart.id);
           if (mesh) {
             if (selectedMesh) resetMeshHighlight(selectedMesh);
             selectedMesh = mesh;
@@ -2748,10 +2923,70 @@ function setupAppListeners() {
             showExplanation(foundPart, mesh);
             focusOnSpecificPartObject(mesh);
             if (isXRayMode) updateXRayVisuals();
+            showToast(`Inspecting "${foundPart.name}"`, '🎯', 2500);
+            return;
           }
         }
       }
+
+      // 3. Search for part across ALL other models
+      for (const [oKey, oVal] of Object.entries(OBJECTS)) {
+        if (oVal && oVal.parts) {
+          const match = oVal.parts.find(
+            (p) => p.name.toLowerCase().includes(query) || (p.id && p.id.toLowerCase().includes(query))
+          );
+          if (match) {
+            switchModel(oKey);
+            setTimeout(() => {
+              const mesh = activeMeshes.find((m) => m.userData?.partData?.id === match.id);
+              if (mesh) {
+                if (selectedMesh) resetMeshHighlight(selectedMesh);
+                selectedMesh = mesh;
+                setMeshHighlight(selectedMesh, 0xf59e0b, 0.45);
+                showExplanation(match, mesh);
+                focusOnSpecificPartObject(mesh);
+                if (isXRayMode) updateXRayVisuals();
+              }
+            }, 80);
+            showToast(`Found "${match.name}" in ${oVal.label}`, '🔍', 3500);
+            return;
+          }
+        }
+      }
+
+      showToast(`No model or component matching "${query}"`, 'ℹ️', 3000);
     }
+  });
+
+  // 3D Snapshot Export Listener
+  document.getElementById('snapshotBtn')?.addEventListener('click', () => {
+    export3DSnapshot();
+  });
+
+  // BOM CSV Export Listener
+  document.getElementById('exportBomBtn')?.addEventListener('click', () => {
+    exportBOMToCSV();
+  });
+
+  // Camera Presets Menu & Options
+  const camPresetsBtn = document.getElementById('cameraPresetsBtn');
+  const camPresetsMenu = document.getElementById('cameraPresetsMenu');
+  camPresetsBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    playTactileClick(550);
+    camPresetsMenu?.classList.toggle('hidden');
+  });
+
+  document.querySelectorAll('.cam-preset-opt').forEach((optBtn) => {
+    optBtn.addEventListener('click', () => {
+      const view = optBtn.getAttribute('data-view');
+      if (view) setCameraPreset(view);
+      camPresetsMenu?.classList.add('hidden');
+    });
+  });
+
+  document.addEventListener('click', () => {
+    camPresetsMenu?.classList.add('hidden');
   });
 
   // Explanation Depth Toggle (Simple vs Technical)
