@@ -19,6 +19,145 @@
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ============================================================
+       MOBILE TOUCH SUPPORT & RESPONSIVE TOUCH INTERACTIONS
+       ============================================================ */
+
+    /* Ensure 3D viewport canvas captures all touches cleanly for OrbitControls */
+    #canvasMount,
+    #canvasMount canvas {
+      touch-action: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
+
+    /* Category tabs smooth touch scroll & tap targets */
+    #categoryTabsRow {
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      scrollbar-width: none;
+    }
+    #categoryTabsRow::-webkit-scrollbar {
+      display: none;
+    }
+    #categoryTabsRow button {
+      touch-action: manipulation;
+      min-height: 32px;
+      padding-top: 5px;
+      padding-bottom: 5px;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    /* Explode range slider: touch-friendly track and thumb */
+    #explodeSlider {
+      touch-action: pan-x;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 28px;
+      background: transparent;
+      cursor: pointer;
+    }
+    #explodeSlider::-webkit-slider-runnable-track {
+      height: 8px;
+      background-color: #1e2738;
+      border-radius: 9999px;
+      border: 1px solid #2d3c52;
+    }
+    #explodeSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      margin-top: -8px;
+      cursor: grab;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+    #explodeSlider::-webkit-slider-thumb:active {
+      transform: scale(1.18);
+      cursor: grabbing;
+      background: linear-gradient(135deg, #93c5fd, #3b82f6);
+    }
+    #explodeSlider::-moz-range-track {
+      height: 8px;
+      background-color: #1e2738;
+      border-radius: 9999px;
+      border: 1px solid #2d3c52;
+    }
+    #explodeSlider::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      cursor: grab;
+    }
+
+    /* Touch manipulation and minimum target sizes for controls */
+    .touch-manipulation,
+    button,
+    select,
+    input[type="button"],
+    input[type="submit"] {
+      touch-action: manipulation;
+    }
+
+    /* Preset and dock buttons tap sizing */
+    #sidebarAssemblyDock button {
+      min-height: 34px;
+    }
+
+    /* Model card & part card items touch sizing */
+    .model-card-item,
+    .part-card-item {
+      touch-action: manipulation;
+    }
+
+    /* Random Object Button Micro-Animations */
+    @keyframes diceSpin {
+      0% {
+        transform: rotate(0deg) scale(1);
+      }
+      30% {
+        transform: rotate(140deg) scale(1.35);
+      }
+      70% {
+        transform: rotate(270deg) scale(1.15);
+      }
+      100% {
+        transform: rotate(360deg) scale(1);
+      }
+    }
+    .dice-spin-active {
+      display: inline-block;
+      animation: diceSpin 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes pulseRandomBtn {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.6);
+      }
+      50% {
+        transform: scale(0.94);
+        box-shadow: 0 0 0 8px rgba(56, 189, 248, 0);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+      }
+    }
+    .btn-random-pulse {
+      animation: pulseRandomBtn 0.4s ease-out;
+    }
+  </style>
 </head>
 
 <body class="flex flex-col antialiased selection:bg-blue-600 selection:text-white">
@@ -169,8 +308,16 @@
             </svg>
             <span class="text-xs font-semibold text-slate-200">Model Library</span>
           </div>
-          <span id="libraryCountBadge"
-            class="text-[10px] font-mono bg-[#1a2334] text-slate-300 px-2 py-0.5 rounded border border-[#2b3a4e]">11 models</span>
+          <div class="flex items-center gap-2">
+            <button id="randomObjectBtn" type="button"
+              class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#1a2334] hover:bg-[#232f44] text-blue-300 hover:text-white border border-[#2b3a50] hover:border-blue-500/60 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 group touch-manipulation"
+              title="Load a random 3D model">
+              <span id="randomBtnIcon" class="inline-block transition-transform duration-300">🎲</span>
+              <span class="font-medium">Random Object</span>
+            </button>
+            <span id="libraryCountBadge"
+              class="text-[10px] font-mono bg-[#1a2334] text-slate-300 px-2 py-0.5 rounded border border-[#2b3a4e]">11 models</span>
+          </div>
         </div>
 
         <!-- Category Filter Tabs -->
@@ -339,7 +486,7 @@
     <main class="flex-1 relative flex flex-col cad-canvas-backdrop overflow-hidden">
 
       <!-- 3D Canvas Mount Point -->
-      <div id="canvasMount" class="w-full h-full relative cursor-grab active:cursor-grabbing"></div>
+      <div id="canvasMount" class="w-full h-full relative cursor-grab active:cursor-grabbing" style="touch-action: none;"></div>
 
       <!-- Leader Line SVG Overlay & Floating Part Labels Container -->
       <div id="labelsContainer"
@@ -1205,6 +1352,285 @@
   <script src="components.js"></script>
   <script src="quiz.js"></script>
   <script src="app.js"></script>
+
+  <!-- Feature 1 & 2: Mobile Touch Support and Random Object Button Script -->
+  <script>
+    (function () {
+      // -------------------------------------------------------------
+      // FEATURE 1: MOBILE TOUCH CONTROLS & PART TAP SELECTION
+      // -------------------------------------------------------------
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+      let isSingleTouch = false;
+      let touchMovedFar = false;
+      let lastTouchTapTime = 0;
+
+      const TAP_DISTANCE_THRESHOLD = 10; // max px of movement to still count as a tap
+      const TAP_TIME_THRESHOLD = 400; // max ms duration to distinguish tap from drag
+
+      function ensureOrbitControlsTouch() {
+        if (typeof controls !== 'undefined' && controls) {
+          controls.enableRotate = true;
+          controls.enableZoom = true;
+          controls.enablePan = true;
+          if (typeof THREE !== 'undefined' && THREE.TOUCH) {
+            controls.touches = {
+              ONE: THREE.TOUCH.ROTATE,
+              TWO: THREE.TOUCH.DOLLY_PAN
+            };
+          }
+        }
+      }
+
+      function handlePartTapAt(clientX, clientY) {
+        lastTouchTapTime = Date.now();
+        const mount = document.getElementById('canvasMount');
+        if (!mount || typeof camera === 'undefined' || !camera || typeof activeMeshes === 'undefined' || !activeMeshes.length) {
+          return;
+        }
+
+        const rect = mount.getBoundingClientRect();
+        const tapMouse = new THREE.Vector2(
+          ((clientX - rect.left) / rect.width) * 2 - 1,
+          -((clientY - rect.top) / rect.height) * 2 + 1
+        );
+
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(tapMouse, camera);
+        const intersects = ray.intersectObjects(activeMeshes, true);
+
+        if (intersects.length > 0) {
+          let rootPart = intersects[0].object;
+          while (rootPart && !rootPart.userData?.partData && rootPart.parent && rootPart.parent !== scene) {
+            rootPart = rootPart.parent;
+          }
+
+          if (rootPart && rootPart.userData?.partData) {
+            const part = rootPart.userData.partData;
+            if (typeof playTactileClick === 'function') {
+              playTactileClick(760);
+            }
+            if (typeof selectedMesh !== 'undefined' && selectedMesh && selectedMesh !== rootPart) {
+              if (typeof resetMeshHighlight === 'function') resetMeshHighlight(selectedMesh);
+            }
+            selectedMesh = rootPart;
+            hoveredMesh = rootPart;
+            if (typeof setMeshHighlight === 'function') {
+              setMeshHighlight(selectedMesh, 0xf59e0b, 0.45);
+            }
+            if (typeof showExplanation === 'function') {
+              showExplanation(part, selectedMesh);
+            }
+            if (typeof isXRayMode !== 'undefined' && isXRayMode && typeof updateXRayVisuals === 'function') {
+              updateXRayVisuals();
+            }
+            return;
+          }
+        }
+
+        // Tap on empty space: toggle explode (matches existing desktop canvas click behavior)
+        if (typeof toggleExplode === 'function') {
+          toggleExplode();
+        }
+      }
+
+      function setupTouchListeners() {
+        const mount = document.getElementById('canvasMount');
+        if (!mount) return;
+
+        mount.style.touchAction = 'none';
+
+        // Update canvas element touchAction as soon as renderer attaches it
+        const updateCanvasTouchAction = () => {
+          const canvas = mount.querySelector('canvas');
+          if (canvas) {
+            canvas.style.touchAction = 'none';
+          }
+        };
+        updateCanvasTouchAction();
+        setTimeout(updateCanvasTouchAction, 100);
+
+        ensureOrbitControlsTouch();
+
+        // Single touch tracking to accurately distinguish tap from drag
+        mount.addEventListener('touchstart', (e) => {
+          ensureOrbitControlsTouch();
+          if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = performance.now();
+            isSingleTouch = true;
+            touchMovedFar = false;
+          } else {
+            // Multi-touch (e.g. 2-finger pinch to zoom)
+            isSingleTouch = false;
+            touchMovedFar = true;
+          }
+        }, { passive: true });
+
+        mount.addEventListener('touchmove', (e) => {
+          if (e.touches.length > 1) {
+            touchMovedFar = true;
+            isSingleTouch = false;
+          } else if (isSingleTouch && e.touches.length === 1) {
+            const dist = Math.hypot(e.touches[0].clientX - touchStartX, e.touches[0].clientY - touchStartY);
+            if (dist > TAP_DISTANCE_THRESHOLD) {
+              touchMovedFar = true;
+            }
+          }
+        }, { passive: true });
+
+        mount.addEventListener('touchend', (e) => {
+          if (isSingleTouch && !touchMovedFar) {
+            const elapsed = performance.now() - touchStartTime;
+            const endTouch = e.changedTouches[0];
+            const finalDist = endTouch ? Math.hypot(endTouch.clientX - touchStartX, endTouch.clientY - touchStartY) : 0;
+
+            if (elapsed <= TAP_TIME_THRESHOLD && finalDist <= TAP_DISTANCE_THRESHOLD) {
+              handlePartTapAt(touchStartX, touchStartY);
+            }
+          }
+          isSingleTouch = false;
+        }, { passive: true });
+
+        mount.addEventListener('touchcancel', () => {
+          isSingleTouch = false;
+          touchMovedFar = true;
+        }, { passive: true });
+
+        // Intercept synthetic click in capture phase to prevent double-firing after touch tap
+        mount.addEventListener('click', (e) => {
+          if (Date.now() - lastTouchTapTime < 500) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        }, true);
+
+        // Touch handling for floating 3D leader-line labels
+        const labelsWrap = document.getElementById('labelsDivWrap');
+        if (labelsWrap) {
+          labelsWrap.addEventListener('touchend', (e) => {
+            const labelEl = e.target.closest('[data-part-id]');
+            if (!labelEl) return;
+            const partId = labelEl.getAttribute('data-part-id');
+            if (!partId || typeof activeMeshes === 'undefined') return;
+
+            const targetMesh = activeMeshes.find(m => m.userData?.partData?.id === partId);
+            if (targetMesh && targetMesh.userData?.partData) {
+              e.stopPropagation();
+              lastTouchTapTime = Date.now();
+              if (typeof playTactileClick === 'function') playTactileClick(780);
+              if (typeof selectedMesh !== 'undefined' && selectedMesh && selectedMesh !== targetMesh) {
+                if (typeof resetMeshHighlight === 'function') resetMeshHighlight(selectedMesh);
+              }
+              selectedMesh = targetMesh;
+              hoveredMesh = targetMesh;
+              if (typeof setMeshHighlight === 'function') {
+                setMeshHighlight(selectedMesh, 0xf59e0b, 0.45);
+              }
+              if (typeof showExplanation === 'function') {
+                showExplanation(targetMesh.userData.partData, targetMesh);
+              }
+              if (typeof focusOnSpecificPartObject === 'function') {
+                focusOnSpecificPartObject(targetMesh);
+              }
+              if (typeof isXRayMode !== 'undefined' && isXRayMode && typeof updateXRayVisuals === 'function') {
+                updateXRayVisuals();
+              }
+            }
+          }, { passive: false });
+        }
+      }
+
+      // -------------------------------------------------------------
+      // FEATURE 2: RANDOM OBJECT BUTTON
+      // -------------------------------------------------------------
+      function setupRandomObjectButton() {
+        const randomBtn = document.getElementById('randomObjectBtn');
+        if (!randomBtn) return;
+
+        randomBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (typeof OBJECTS === 'undefined' || !OBJECTS) return;
+
+          const allKeys = Object.keys(OBJECTS);
+          if (allKeys.length === 0) return;
+
+          // Pick a random key, excluding currentObjectId if there's more than one object
+          const currentId = (typeof currentObjectId !== 'undefined' && currentObjectId) || window.currentObjectId;
+          const availableKeys = allKeys.length > 1
+            ? allKeys.filter(k => k !== currentId)
+            : allKeys;
+
+          const randomKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
+
+          // Visual feedback: spin dice icon and pulse button
+          const diceIcon = document.getElementById('randomBtnIcon');
+          if (diceIcon) {
+            diceIcon.classList.remove('dice-spin-active');
+            void diceIcon.offsetWidth; // Force reflow to re-trigger CSS keyframe
+            diceIcon.classList.add('dice-spin-active');
+            setTimeout(() => diceIcon.classList.remove('dice-spin-active'), 600);
+          }
+
+          randomBtn.classList.remove('btn-random-pulse');
+          void randomBtn.offsetWidth;
+          randomBtn.classList.add('btn-random-pulse');
+          setTimeout(() => randomBtn.classList.remove('btn-random-pulse'), 500);
+
+          // Audio tactile click feedback
+          if (typeof playTactileClick === 'function') {
+            playTactileClick(740, 0.05);
+          }
+
+          // If current category filter would hide the new object, reset activeCategoryTab to 'All'
+          if (typeof activeCategoryTab !== 'undefined' && activeCategoryTab !== 'All') {
+            const targetCat = OBJECTS[randomKey]?.category;
+            if (targetCat !== activeCategoryTab) {
+              activeCategoryTab = 'All';
+              if (typeof renderCategoryTabs === 'function') {
+                renderCategoryTabs();
+              }
+            }
+          }
+
+          // Switch model via switchModel() or loadObject()
+          if (typeof switchModel === 'function') {
+            switchModel(randomKey);
+          } else if (typeof loadObject === 'function') {
+            loadObject(randomKey);
+            if (typeof renderSelectorGrid === 'function') renderSelectorGrid();
+            if (typeof renderModelDropdown === 'function') renderModelDropdown();
+          }
+
+          // Ensure OrbitControls touch configuration is intact and active card is highlighted & visible
+          setTimeout(() => {
+            ensureOrbitControlsTouch();
+            const activeCard = document.querySelector('#objectSelectorGrid .is-active-model');
+            if (activeCard) {
+              activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          }, 120);
+        });
+      }
+
+      // Initialize after DOM and app.js are ready
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', () => {
+          setTimeout(() => {
+            setupTouchListeners();
+            setupRandomObjectButton();
+          }, 50);
+        });
+      } else {
+        setTimeout(() => {
+          setupTouchListeners();
+          setupRandomObjectButton();
+        }, 50);
+      }
+    })();
+  </script>
 </body>
 
 </html>
