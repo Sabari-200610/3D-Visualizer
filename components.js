@@ -303,18 +303,67 @@ function buildRealisticComponent(part, objectId, baseMaterial, createRealisticGe
   // 15. HUMAN HEART (BIOLOGICAL SCIENCE)
   // ---------------------------------------------------------------------------
   else if (objectId === 'human-heart') {
-    if (partId.includes('ventricle')) {
+    if (partId === 'left-ventricle') {
       handled = true;
-      group = buildRealisticHeartVentricle(part, baseMaterial);
-    } else if (partId.includes('atrium')) {
+      group = buildRealisticLeftVentricle(part, baseMaterial);
+    } else if (partId === 'right-ventricle') {
       handled = true;
-      group = buildRealisticHeartAtrium(part, baseMaterial);
+      group = buildRealisticRightVentricle(part, baseMaterial);
+    } else if (partId === 'left-atrium') {
+      handled = true;
+      group = buildRealisticLeftAtrium(part, baseMaterial);
+    } else if (partId === 'right-atrium') {
+      handled = true;
+      group = buildRealisticRightAtrium(part, baseMaterial);
     } else if (partId === 'aorta') {
       handled = true;
       group = buildRealisticAorta(part, baseMaterial);
+    } else if (partId === 'pulmonary-trunk') {
+      handled = true;
+      group = buildRealisticPulmonaryTrunk(part, baseMaterial);
     } else if (partId === 'major-veins') {
       handled = true;
       group = buildRealisticMajorVeins(part, baseMaterial);
+    } else if (partId === 'coronary-circulation') {
+      handled = true;
+      group = buildRealisticCoronaryCirculation(part, baseMaterial);
+    } else if (partId === 'pacemaker') {
+      handled = true;
+      group = buildRealisticPacemaker(part, baseMaterial);
+    } else if (partId === 'pacing-leads') {
+      handled = true;
+      group = buildRealisticPacingLeads(part, baseMaterial);
+    } else if (partId === 'coronary-stent') {
+      handled = true;
+      group = buildRealisticCoronaryStent(part, baseMaterial);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 15B. CARDIAC PACEMAKER (STANDALONE ACTIVE MEDICAL DEVICE)
+  // ---------------------------------------------------------------------------
+  else if (objectId === 'cardiac-pacemaker') {
+    if (partId === 'titanium-case') {
+      handled = true;
+      group = buildRealisticPacemakerCase(part, baseMaterial);
+    } else if (partId === 'header-block') {
+      handled = true;
+      group = buildRealisticPacemakerHeader(part, baseMaterial);
+    } else if (partId === 'lithium-battery') {
+      handled = true;
+      group = buildRealisticPacemakerBattery(part, baseMaterial);
+    } else if (partId === 'hybrid-circuit') {
+      handled = true;
+      group = buildRealisticPacemakerCircuit(part, baseMaterial);
+    } else if (partId === 'atrial-lead' || partId === 'ventricular-lead') {
+      handled = true;
+      group = buildRealisticPacemakerLeadStandalone(part, baseMaterial);
+    } else if (partId === 'telemetry-antenna') {
+      handled = true;
+      group = buildRealisticPacemakerTelemetry(part, baseMaterial);
+    } else if (partId === 'programming-wand') {
+      handled = true;
+      group = buildRealisticPacemakerWand(part, baseMaterial);
     }
   }
 
@@ -3675,125 +3724,1019 @@ function buildRealisticMRIConsole(part, baseMaterial) {
 }
 
 // -----------------------------------------------------------------------------
-// 19. HUMAN HEART PROCEDURAL BIOMECHANICS & HEMODYNAMICS
+// 19. HUMAN HEART PROCEDURAL BIOMECHANICS, ANATOMY & MEDICAL DEVICES
 // -----------------------------------------------------------------------------
-function buildRealisticHeartVentricle(part, baseMaterial) {
+
+/**
+ * Left Ventricle & Cardiac Apex:
+ * Muscular, thick-walled conical pumping chamber forming the anatomical apex.
+ */
+function buildRealisticLeftVentricle(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Muscle Myocardial Wall Geometry
-  const r = part.geometry.args[0] || 1.0;
-  const ventGeom = new THREE.SphereGeometry(r, 28, 28);
-  ventGeom.scale(0.9, 1.25, 0.95);
+  // Anatomically sculpted myocardial wall geometry tapering to the cardiac apex
+  const ventGeom = new THREE.SphereGeometry(1.2, 48, 48);
+  const posAttr = ventGeom.attributes.position;
+  for (let i = 0; i < posAttr.count; i++) {
+    let x = posAttr.getX(i);
+    let y = posAttr.getY(i);
+    let z = posAttr.getZ(i);
+
+    // Anatomical downward-leftward apex taper
+    if (y < 0.3) {
+      const t = Math.max(0, Math.min(1, (0.3 - y) / 1.7));
+      const taper = 1.0 - t * 0.72;
+      x = x * taper - t * 0.28;
+      z = z * taper + t * 0.22;
+      y = y * 1.25;
+    }
+
+    // Septal groove flattening where LV interfaces with RV
+    if (x > 0.15) {
+      x = x * 0.88;
+    }
+
+    // Natural myocardial surface muscular striations
+    x += Math.sin(y * 7 + z * 5) * 0.02;
+    z += Math.cos(x * 6 + y * 6) * 0.02;
+
+    posAttr.setXYZ(i, x, y, z);
+  }
+  ventGeom.computeVertexNormals();
+
   const ventMat = new THREE.MeshStandardMaterial({
-    color: part.color,
-    roughness: 0.75,
-    metalness: 0.1,
+    color: part.color || 0x941b1b,
+    roughness: 0.44,
+    metalness: 0.04,
     bumpMap: makeTexturedPlasticBumpMap(),
     bumpScale: 0.015,
   });
-  const vent = new THREE.Mesh(ventGeom, ventMat);
-  vent.castShadow = true;
-  group.add(vent);
+  const ventMesh = new THREE.Mesh(ventGeom, ventMat);
+  ventMesh.castShadow = true;
+  group.add(ventMesh);
 
-  // Branching Coronary Arteries (Anterior Interventricular Artery)
-  const pts = [
-    new THREE.Vector3(0, r * 0.9, r * 0.8),
-    new THREE.Vector3(0.15, r * 0.3, r * 0.9),
-    new THREE.Vector3(-0.1, -r * 0.2, r * 0.85),
-    new THREE.Vector3(0.05, -r * 0.8, r * 0.5),
+  // Myocardial Apex Vortex Swirl (Apical muscular vortex)
+  const vortexGeom = new THREE.TorusGeometry(0.18, 0.045, 12, 24);
+  const vortexMat = new THREE.MeshStandardMaterial({
+    color: 0x771616,
+    roughness: 0.5,
+    metalness: 0.02,
+  });
+  const vortex = new THREE.Mesh(vortexGeom, vortexMat);
+  vortex.position.set(-0.35, -1.38, 0.28);
+  vortex.rotation.x = Math.PI / 2.3;
+  vortex.rotation.y = -0.4;
+  group.add(vortex);
+
+  // Fine anterior branching arterioles over myocardium
+  const artPts = [
+    new THREE.Vector3(-0.05, 0.2, 1.05),
+    new THREE.Vector3(-0.2, -0.3, 0.95),
+    new THREE.Vector3(-0.35, -0.85, 0.7),
+    new THREE.Vector3(-0.38, -1.25, 0.38),
   ];
-  const curve = new THREE.CatmullRomCurve3(pts);
-  const arteryGeom = new THREE.TubeGeometry(curve, 20, 0.04, 8, false);
-  const arteryMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
-  const artery = new THREE.Mesh(arteryGeom, arteryMat);
-  group.add(artery);
+  const artCurve = new THREE.CatmullRomCurve3(artPts);
+  const artGeom = new THREE.TubeGeometry(artCurve, 24, 0.032, 8, false);
+  const artMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35, metalness: 0.08 });
+  const artMesh = new THREE.Mesh(artGeom, artMat);
+  group.add(artMesh);
 
-  // Rhythmic Sinus-Rhythm Cardiac Contraction (lub-dub heart beat)
+  // Diagonal branching arteriole spreading laterally
+  const diagPts = [
+    new THREE.Vector3(-0.2, -0.3, 0.95),
+    new THREE.Vector3(-0.55, -0.5, 0.8),
+    new THREE.Vector3(-0.85, -0.7, 0.45),
+  ];
+  const diagCurve = new THREE.CatmullRomCurve3(diagPts);
+  const diagGeom = new THREE.TubeGeometry(diagCurve, 16, 0.024, 8, false);
+  const diagMesh = new THREE.Mesh(diagGeom, artMat);
+  group.add(diagMesh);
+
+  // Rhythmic Sinus-Rhythm Cardiac Contraction with authentic myocardial wringing / torsion
   COMPONENT_ANIMATORS.push((delta, time) => {
-    const t = (time * 1.8) % 1.0;
-    const lub = Math.exp(-Math.pow(t - 0.2, 2) * 80);
-    const dub = Math.exp(-Math.pow(t - 0.45, 2) * 80);
-    const scale = 1.0 + (lub * 0.08 + dub * 0.05);
-    group.scale.set(scale, 1.0 + (lub * 0.05 + dub * 0.03), scale);
+    const t = (time * 1.15) % 1.0;
+    const lub = Math.exp(-Math.pow(t - 0.22, 2) * 90);
+    const dub = Math.exp(-Math.pow(t - 0.44, 2) * 90);
+    const systole = lub * 0.09 + dub * 0.05;
+
+    // Physiological radial contraction and longitudinal shortening
+    group.scale.set(1.0 - systole * 0.75, 1.0 - systole * 0.5, 1.0 - systole * 0.75);
+
+    // Anatomical myocardial torsional wringing (twisting along long axis during ejection)
+    group.rotation.y = -systole * 0.07;
   });
 
   return group;
 }
 
-function buildRealisticHeartAtrium(part, baseMaterial) {
+/**
+ * Right Ventricle & Infundibulum:
+ * Crescentic anterior pumping chamber wrapping against the septum and tapering into the infundibulum.
+ */
+function buildRealisticRightVentricle(part, baseMaterial) {
   const group = new THREE.Group();
 
-  const r = part.geometry.args[0] || 0.8;
-  const atriumGeom = new THREE.SphereGeometry(r, 24, 24);
-  atriumGeom.scale(1.1, 0.9, 1.0);
-  const atriumMat = new THREE.MeshStandardMaterial({
-    color: part.color,
-    roughness: 0.8,
-    metalness: 0.05,
+  const rvGeom = new THREE.SphereGeometry(1.05, 36, 36);
+  const posAttr = rvGeom.attributes.position;
+  for (let i = 0; i < posAttr.count; i++) {
+    let x = posAttr.getX(i);
+    let y = posAttr.getY(i);
+    let z = posAttr.getZ(i);
+
+    // Crescent wrap hugging the anterior interventricular septum
+    if (z > 0) {
+      z = z * 1.15 + 0.15;
+    }
+    if (x < 0) {
+      x = x * 0.75; // conform to septal boundary
+    }
+
+    // Infundibulum / Conus Arteriosus extension pointing upward to pulmonary trunk
+    if (y > 0.1) {
+      x = x * 0.85 + 0.05;
+      z = z * 0.95 + 0.15;
+      y = y * 1.18;
+    }
+
+    // Taper inferiorly before the apex (leaving true apex formed by LV)
+    if (y < -0.2) {
+      const taper = Math.max(0.2, 1.0 - ((-y - 0.2) / 0.9) * 0.65);
+      x = x * taper;
+      z = z * taper;
+    }
+
+    posAttr.setXYZ(i, x, y, z);
+  }
+  rvGeom.computeVertexNormals();
+
+  const rvMat = new THREE.MeshStandardMaterial({
+    color: part.color || 0xaa2222,
+    roughness: 0.48,
+    metalness: 0.04,
     bumpMap: makeTexturedPlasticBumpMap(),
     bumpScale: 0.012,
   });
-  const atrium = new THREE.Mesh(atriumGeom, atriumMat);
-  atrium.castShadow = true;
-  group.add(atrium);
+  const rvMesh = new THREE.Mesh(rvGeom, rvMat);
+  rvMesh.castShadow = true;
+  group.add(rvMesh);
 
-  // Atrial Auricle Appendage
-  const auricleGeom = new THREE.ConeGeometry(r * 0.5, r * 0.6, 16);
-  const auricleMat = atriumMat;
-  const auricle = new THREE.Mesh(auricleGeom, auricleMat);
-  auricle.position.set(r * 0.6, 0.1, r * 0.4);
-  auricle.rotation.z = -0.5;
-  group.add(auricle);
+  // Conus Arteriosus / Infundibulum outflow ring leading to pulmonary valve
+  const conusRingGeom = new THREE.CylinderGeometry(0.38, 0.42, 0.25, 24);
+  const conusRing = new THREE.Mesh(conusRingGeom, rvMat);
+  conusRing.position.set(0.12, 0.58, 0.42);
+  conusRing.rotation.x = 0.25;
+  group.add(conusRing);
 
-  // Synchronous Pre-Ventricular Atrial Kick Pulsation
+  // Marginal branching arterioles
+  const margPts = [
+    new THREE.Vector3(0.5, 0.2, 0.8),
+    new THREE.Vector3(0.65, -0.2, 0.65),
+    new THREE.Vector3(0.6, -0.65, 0.45),
+  ];
+  const margCurve = new THREE.CatmullRomCurve3(margPts);
+  const margGeom = new THREE.TubeGeometry(margCurve, 16, 0.026, 8, false);
+  const margMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35 });
+  const margMesh = new THREE.Mesh(margGeom, margMat);
+  group.add(margMesh);
+
+  // Synchronized ventricular systolic contraction
   COMPONENT_ANIMATORS.push((delta, time) => {
-    const t = (time * 1.8) % 1.0;
-    const atrialKick = Math.exp(-Math.pow(t - 0.08, 2) * 80);
-    const scale = 1.0 + atrialKick * 0.07;
-    group.scale.set(scale, scale, scale);
+    const t = (time * 1.15) % 1.0;
+    const lub = Math.exp(-Math.pow(t - 0.22, 2) * 90);
+    const dub = Math.exp(-Math.pow(t - 0.44, 2) * 90);
+    const systole = lub * 0.08 + dub * 0.04;
+    group.scale.set(1.0 - systole * 0.7, 1.0 - systole * 0.5, 1.0 - systole * 0.7);
   });
 
   return group;
 }
 
+/**
+ * Left Atrium & Auricle:
+ * Smooth posterior chamber receiving pulmonary veins, with contoured left auricle.
+ */
+function buildRealisticLeftAtrium(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Smooth posterior atrial chamber
+  const atriumGeom = new THREE.SphereGeometry(0.78, 32, 32);
+  atriumGeom.scale(1.05, 0.95, 0.9);
+  const atriumMat = new THREE.MeshStandardMaterial({
+    color: part.color || 0x941b2b,
+    roughness: 0.52,
+    metalness: 0.04,
+    bumpMap: makeTexturedPlasticBumpMap(),
+    bumpScale: 0.01,
+  });
+  const atriumMesh = new THREE.Mesh(atriumGeom, atriumMat);
+  atriumMesh.castShadow = true;
+  group.add(atriumMesh);
+
+  // Contoured Left Auricle (Left Atrial Appendage) curving forward over left coronary groove
+  const auriclePts = [
+    new THREE.Vector3(-0.35, 0.1, 0.2),
+    new THREE.Vector3(-0.55, 0.15, 0.5),
+    new THREE.Vector3(-0.4, -0.05, 0.7),
+  ];
+  const auricleCurve = new THREE.CatmullRomCurve3(auriclePts);
+  const auricleGeom = new THREE.TubeGeometry(auricleCurve, 20, 0.22, 16, false);
+  const auricleMesh = new THREE.Mesh(auricleGeom, atriumMat);
+  group.add(auricleMesh);
+
+  // Pulmonary vein entrance cuffs
+  [
+    [-0.35, 0.25, -0.7],
+    [-0.35, -0.2, -0.7],
+    [0.35, 0.25, -0.7],
+    [0.35, -0.2, -0.7],
+  ].forEach(([x, y, z]) => {
+    const cuffGeom = new THREE.CylinderGeometry(0.14, 0.18, 0.25, 16);
+    const cuffMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.45 });
+    const cuff = new THREE.Mesh(cuffGeom, cuffMat);
+    cuff.position.set(x, y, z);
+    cuff.rotation.x = Math.PI / 2;
+    group.add(cuff);
+  });
+
+  // Pre-Ventricular Atrial Kick Pulsation (~80ms before ventricular contraction)
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const t = (time * 1.15) % 1.0;
+    const kick = Math.exp(-Math.pow(t - 0.08, 2) * 110);
+    const s = 1.0 - kick * 0.07;
+    group.scale.set(s, s, s);
+  });
+
+  return group;
+}
+
+/**
+ * Right Atrium & SA Node:
+ * Systemic venous inflow chamber with crested right auricle and SA pacemaker node.
+ */
+function buildRealisticRightAtrium(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  const atriumGeom = new THREE.SphereGeometry(0.82, 32, 32);
+  atriumGeom.scale(1.0, 1.15, 0.95);
+  const atriumMat = new THREE.MeshStandardMaterial({
+    color: part.color || 0x831843,
+    roughness: 0.55,
+    metalness: 0.04,
+    bumpMap: makeTexturedPlasticBumpMap(),
+    bumpScale: 0.01,
+  });
+  const atriumMesh = new THREE.Mesh(atriumGeom, atriumMat);
+  atriumMesh.castShadow = true;
+  group.add(atriumMesh);
+
+  // Broad Crested Right Auricle (Right Atrial Appendage) wrapping over ascending aorta root
+  const auriclePts = [
+    new THREE.Vector3(0.2, 0.35, 0.2),
+    new THREE.Vector3(-0.15, 0.4, 0.55),
+    new THREE.Vector3(-0.35, 0.25, 0.5),
+  ];
+  const auricleCurve = new THREE.CatmullRomCurve3(auriclePts);
+  const auricleGeom = new THREE.TubeGeometry(auricleCurve, 16, 0.24, 16, false);
+  const auricleMesh = new THREE.Mesh(auricleGeom, atriumMat);
+  group.add(auricleMesh);
+
+  // Sinoatrial (SA) Node Pacemaker region (high-specialized biological conduction tissue)
+  const saNodeGeom = new THREE.SphereGeometry(0.12, 16, 16);
+  const saNodeMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.8,
+    roughness: 0.3,
+  });
+  const saNode = new THREE.Mesh(saNodeGeom, saNodeMat);
+  saNode.position.set(0.15, 0.75, -0.1);
+  group.add(saNode);
+
+  // Pre-Ventricular Atrial Kick Pulsation & SA Node bio-electric pulse
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const t = (time * 1.15) % 1.0;
+    const kick = Math.exp(-Math.pow(t - 0.08, 2) * 110);
+    const s = 1.0 - kick * 0.07;
+    group.scale.set(s, s, s);
+
+    // Glowing bio-electric sinus impulse firing at start of cycle
+    const sinusFire = Math.exp(-Math.pow(t - 0.04, 2) * 200);
+    saNodeMat.emissiveIntensity = 0.5 + sinusFire * 2.5;
+  });
+
+  return group;
+}
+
+/**
+ * Ascending Aorta & Sweeping Aortic Arch:
+ * Primary systemic elastic conduit curving gracefully with 3 brachiocephalic arch branches.
+ */
 function buildRealisticAorta(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // High-Pressure Ascending Aorta Trunk
-  const aortaGeom = new THREE.CylinderGeometry(0.45, 0.45, 2.2, 24);
-  const aorta = new THREE.Mesh(aortaGeom, baseMaterial);
-  group.add(aorta);
+  // Anatomically accurate sweeping 3D CatmullRom spline for the Aorta and Aortic Arch
+  const aortaPts = [
+    new THREE.Vector3(-0.05, -0.7, 0.08),  // Aortic valve orifice root
+    new THREE.Vector3(-0.02, -0.15, 0.16), // Ascending aorta lower
+    new THREE.Vector3(-0.02, 0.45, 0.2),   // Ascending aorta mid
+    new THREE.Vector3(-0.08, 0.85, 0.1),   // Arch convexity peak
+    new THREE.Vector3(-0.25, 0.88, -0.12), // Arch transverse crest
+    new THREE.Vector3(-0.38, 0.55, -0.35), // Arch concavity bend
+    new THREE.Vector3(-0.42, -0.65, -0.5), // Descending thoracic aorta
+  ];
+  const aortaCurve = new THREE.CatmullRomCurve3(aortaPts);
+  const aortaGeom = new THREE.TubeGeometry(aortaCurve, 52, 0.38, 24, false);
 
-  // Three Primary Arch Arteries: Brachiocephalic, Common Carotid, Subclavian
-  [-0.3, 0, 0.3].forEach((offset) => {
-    const branchGeom = new THREE.CylinderGeometry(0.12, 0.14, 0.8, 16);
-    const branchMat = getHardwareMat(0xef4444, 0.4, 0.6);
-    const branch = new THREE.Mesh(branchGeom, branchMat);
-    branch.position.set(offset * 0.7, 1.25, offset * 0.4);
-    branch.rotation.z = offset * 0.4;
-    group.add(branch);
+  const aortaMat = new THREE.MeshStandardMaterial({
+    color: part.color || 0xdc2626,
+    roughness: 0.32,
+    metalness: 0.06,
+    bumpMap: makeTexturedPlasticBumpMap(),
+    bumpScale: 0.008,
+  });
+  const aortaMesh = new THREE.Mesh(aortaGeom, aortaMat);
+  aortaMesh.castShadow = true;
+  group.add(aortaMesh);
+
+  // Bulbous Aortic Root (Sinuses of Valsalva)
+  const bulbGeom = new THREE.SphereGeometry(0.46, 24, 24);
+  bulbGeom.scale(1.05, 0.8, 1.05);
+  const bulbMesh = new THREE.Mesh(bulbGeom, aortaMat);
+  bulbMesh.position.set(-0.05, -0.65, 0.08);
+  group.add(bulbMesh);
+
+  // Three Primary Arch Arteries:
+  // 1. Brachiocephalic Trunk (Innominate Artery)
+  const bcGeom = new THREE.CylinderGeometry(0.14, 0.17, 0.9, 16);
+  const branchMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35 });
+  const bc = new THREE.Mesh(bcGeom, branchMat);
+  bc.position.set(0.08, 1.25, 0.14);
+  bc.rotation.z = -0.35;
+  bc.rotation.x = -0.15;
+  group.add(bc);
+
+  // 2. Left Common Carotid Artery
+  const ccGeom = new THREE.CylinderGeometry(0.12, 0.15, 0.85, 16);
+  const cc = new THREE.Mesh(ccGeom, branchMat);
+  cc.position.set(-0.12, 1.32, 0.02);
+  cc.rotation.z = -0.05;
+  group.add(cc);
+
+  // 3. Left Subclavian Artery
+  const scGeom = new THREE.CylinderGeometry(0.12, 0.15, 0.82, 16);
+  const sc = new THREE.Mesh(scGeom, branchMat);
+  sc.position.set(-0.3, 1.28, -0.14);
+  sc.rotation.z = 0.25;
+  sc.rotation.x = 0.15;
+  group.add(sc);
+
+  // Windkessel Elastic Pulsation Wave during systolic ventricular ejection
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const t = (time * 1.15) % 1.0;
+    const pulse = Math.exp(-Math.pow(t - 0.28, 2) * 70);
+    const expand = 1.0 + pulse * 0.05;
+    group.scale.set(expand, 1.0, expand);
   });
 
   return group;
 }
 
+/**
+ * Pulmonary Trunk & Arteries:
+ * Emerges from right ventricle, crosses anterior to aorta, and bifurcates beneath the aortic arch.
+ */
+function buildRealisticPulmonaryTrunk(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Pulmonary Trunk Outflow Conduits
+  const trunkPts = [
+    new THREE.Vector3(0.05, -0.65, 0.15),
+    new THREE.Vector3(-0.02, -0.1, 0.05),
+    new THREE.Vector3(-0.06, 0.45, -0.08),
+  ];
+  const trunkCurve = new THREE.CatmullRomCurve3(trunkPts);
+  const trunkGeom = new THREE.TubeGeometry(trunkCurve, 24, 0.36, 20, false);
+  const trunkMat = new THREE.MeshStandardMaterial({
+    color: part.color || 0x2563eb,
+    roughness: 0.35,
+    metalness: 0.08,
+  });
+  const trunkMesh = new THREE.Mesh(trunkGeom, trunkMat);
+  trunkMesh.castShadow = true;
+  group.add(trunkMesh);
+
+  // Left Pulmonary Artery (courses to left lung)
+  const lpaPts = [
+    new THREE.Vector3(-0.06, 0.45, -0.08),
+    new THREE.Vector3(-0.45, 0.42, -0.25),
+    new THREE.Vector3(-0.85, 0.35, -0.38),
+  ];
+  const lpaCurve = new THREE.CatmullRomCurve3(lpaPts);
+  const lpaGeom = new THREE.TubeGeometry(lpaCurve, 16, 0.22, 16, false);
+  const lpaMesh = new THREE.Mesh(lpaGeom, trunkMat);
+  group.add(lpaMesh);
+
+  // Right Pulmonary Artery (passes horizontally beneath aortic arch to right lung)
+  const rpaPts = [
+    new THREE.Vector3(-0.06, 0.45, -0.08),
+    new THREE.Vector3(0.35, 0.4, -0.22),
+    new THREE.Vector3(0.85, 0.35, -0.32),
+  ];
+  const rpaCurve = new THREE.CatmullRomCurve3(rpaPts);
+  const rpaGeom = new THREE.TubeGeometry(rpaCurve, 16, 0.22, 16, false);
+  const rpaMesh = new THREE.Mesh(rpaGeom, trunkMat);
+  group.add(rpaMesh);
+
+  // Ligamentum Arteriosum connective tissue band bridging to aortic arch
+  const ligGeom = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 12);
+  const ligMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 });
+  const lig = new THREE.Mesh(ligGeom, ligMat);
+  lig.position.set(-0.16, 0.62, -0.08);
+  lig.rotation.z = -0.6;
+  group.add(lig);
+
+  return group;
+}
+
+/**
+ * Major Veins (Superior & Inferior Vena Cava and Pulmonary Veins):
+ * Venous return conduits entering the atrial chambers.
+ */
 function buildRealisticMajorVeins(part, baseMaterial) {
   const group = new THREE.Group();
 
-  // Vena Cava Vertical Venous Trunk
-  const vcGeom = new THREE.CylinderGeometry(0.4, 0.4, 2.6, 20);
-  const vc = new THREE.Mesh(vcGeom, baseMaterial);
-  group.add(vc);
+  const veinMat = new THREE.MeshStandardMaterial({
+    color: part.color || 0x1d4ed8,
+    roughness: 0.38,
+    metalness: 0.06,
+  });
 
-  // Pulmonary Vein Conduits
-  const pvGeom = new THREE.CylinderGeometry(0.2, 0.2, 1.1, 16);
-  const pvMat = getHardwareMat(0x1d4ed8, 0.4, 0.6);
-  const pv1 = new THREE.Mesh(pvGeom, pvMat);
-  pv1.rotation.z = Math.PI / 2;
-  pv1.position.set(-0.6, 0.4, 0);
-  group.add(pv1);
+  // Superior Vena Cava (SVC) vertical conduit
+  const svcGeom = new THREE.CylinderGeometry(0.34, 0.36, 1.8, 24);
+  const svc = new THREE.Mesh(svcGeom, veinMat);
+  svc.position.set(0.0, 0.5, 0.1);
+  svc.castShadow = true;
+  group.add(svc);
+
+  // Innominate Vein bifurcations at top of SVC
+  [-0.3, 0.3].forEach((offset, idx) => {
+    const innGeom = new THREE.CylinderGeometry(0.18, 0.22, 0.65, 16);
+    const inn = new THREE.Mesh(innGeom, veinMat);
+    inn.position.set(offset * 0.9, 1.35, 0.1);
+    inn.rotation.z = offset * 0.7;
+    group.add(inn);
+  });
+
+  // Inferior Vena Cava (IVC) lower venous conduit
+  const ivcGeom = new THREE.CylinderGeometry(0.36, 0.34, 1.1, 20);
+  const ivc = new THREE.Mesh(ivcGeom, veinMat);
+  ivc.position.set(-0.15, -1.0, -0.05);
+  group.add(ivc);
+
+  // Pulmonary Vein pairs
+  [
+    [-0.8, -0.1, -0.25],
+    [-0.8, 0.3, -0.25],
+  ].forEach(([x, y, z]) => {
+    const pvGeom = new THREE.CylinderGeometry(0.16, 0.18, 0.75, 16);
+    const pv = new THREE.Mesh(pvGeom, veinMat);
+    pv.position.set(x, y, z);
+    pv.rotation.z = Math.PI / 2;
+    group.add(pv);
+  });
 
   return group;
+}
+
+/**
+ * Coronary Circulation & Epicardial Fat:
+ * High-resolution coronary arterial tree (LAD, RCA, Circumflex) and golden-yellow adipose tissue.
+ */
+function buildRealisticCoronaryCirculation(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  const artMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    roughness: 0.32,
+    metalness: 0.1,
+  });
+  const veinMat = new THREE.MeshStandardMaterial({
+    color: 0x2563eb,
+    roughness: 0.35,
+    metalness: 0.08,
+  });
+  const fatMat = new THREE.MeshStandardMaterial({
+    color: 0xd4af37, // Golden-yellow epicardial adipose tissue
+    roughness: 0.78,
+    metalness: 0.02,
+    bumpMap: makeTexturedPlasticBumpMap(),
+    bumpScale: 0.02,
+  });
+
+  // Left Anterior Descending (LAD) Artery down the anterior interventricular sulcus
+  const ladPts = [
+    new THREE.Vector3(-0.05, 0.55, 0.35),
+    new THREE.Vector3(-0.02, 0.15, 0.42),
+    new THREE.Vector3(-0.12, -0.3, 0.38),
+    new THREE.Vector3(-0.25, -0.75, 0.26),
+    new THREE.Vector3(-0.35, -1.15, 0.08),
+  ];
+  const ladCurve = new THREE.CatmullRomCurve3(ladPts);
+  const ladGeom = new THREE.TubeGeometry(ladCurve, 32, 0.045, 12, false);
+  const ladMesh = new THREE.Mesh(ladGeom, artMat);
+  ladMesh.castShadow = true;
+  group.add(ladMesh);
+
+  // Great Cardiac Vein running parallel in the groove
+  const veinPts = [
+    new THREE.Vector3(0.04, 0.5, 0.34),
+    new THREE.Vector3(0.06, 0.12, 0.41),
+    new THREE.Vector3(-0.05, -0.32, 0.36),
+    new THREE.Vector3(-0.18, -0.78, 0.24),
+  ];
+  const veinCurve = new THREE.CatmullRomCurve3(veinPts);
+  const veinGeom = new THREE.TubeGeometry(veinCurve, 24, 0.038, 12, false);
+  const veinMesh = new THREE.Mesh(veinGeom, veinMat);
+  group.add(veinMesh);
+
+  // Right Coronary Artery (RCA) along right atrioventricular groove
+  const rcaPts = [
+    new THREE.Vector3(0.12, 0.45, 0.25),
+    new THREE.Vector3(0.42, 0.25, 0.32),
+    new THREE.Vector3(0.55, -0.15, 0.24),
+    new THREE.Vector3(0.45, -0.55, 0.05),
+  ];
+  const rcaCurve = new THREE.CatmullRomCurve3(rcaPts);
+  const rcaGeom = new THREE.TubeGeometry(rcaCurve, 24, 0.042, 12, false);
+  const rcaMesh = new THREE.Mesh(rcaGeom, artMat);
+  group.add(rcaMesh);
+
+  // Epicardial Adipose Tissue (Authentic biological fat pads in the sulci grooves)
+  const fatBlobGeoms = [
+    { pos: [-0.06, 0.22, 0.38], scale: [0.18, 0.35, 0.12] },
+    { pos: [-0.16, -0.35, 0.32], scale: [0.16, 0.32, 0.1] },
+    { pos: [-0.28, -0.85, 0.2], scale: [0.14, 0.26, 0.08] },
+    { pos: [0.38, 0.25, 0.28], scale: [0.22, 0.28, 0.14] },
+    { pos: [0.48, -0.15, 0.2], scale: [0.18, 0.32, 0.12] },
+  ];
+  fatBlobGeoms.forEach(({ pos, scale }) => {
+    const fatGeom = new THREE.SphereGeometry(1, 16, 16);
+    fatGeom.scale(...scale);
+    const fatMesh = new THREE.Mesh(fatGeom, fatMat);
+    fatMesh.position.set(...pos);
+    group.add(fatMesh);
+  });
+
+  return group;
+}
+
+/**
+ * MEDICAL DEVICE 1: Implantable Cardiac Pacemaker (Pulse Generator)
+ * Hermetic titanium casing, biocompatible connector header, laser labeling, and status LED.
+ */
+function buildRealisticPacemaker(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  // Hermetic Titanium Canister
+  const caseShape = new THREE.Shape();
+  const w = 0.55, h = 0.65, r = 0.18;
+  caseShape.moveTo(-w + r, -h);
+  caseShape.lineTo(w - r, -h);
+  caseShape.quadraticCurveTo(w, -h, w, -h + r);
+  caseShape.lineTo(w, h - r);
+  caseShape.quadraticCurveTo(w, h, w - r, h);
+  caseShape.lineTo(-w + r, h);
+  caseShape.quadraticCurveTo(-w, h, -w, h - r);
+  caseShape.lineTo(-w, -h + r);
+  caseShape.quadraticCurveTo(-w, -h, -w + r, -h);
+
+  const caseGeom = new THREE.ExtrudeGeometry(caseShape, {
+    depth: 0.18,
+    bevelEnabled: true,
+    bevelSegments: 4,
+    steps: 1,
+    bevelSize: 0.04,
+    bevelThickness: 0.04,
+  });
+  caseGeom.center();
+
+  const caseMat = new THREE.MeshStandardMaterial({
+    color: 0xd1d5db, // Grade-5 Titanium
+    roughness: 0.24,
+    metalness: 0.94,
+    bumpMap: makeBrushedMetalBumpMap(),
+    bumpScale: 0.012,
+  });
+  const caseMesh = new THREE.Mesh(caseGeom, caseMat);
+  caseMesh.castShadow = true;
+  group.add(caseMesh);
+
+  // Laser-Etched Branding Canvas Decal
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 512;
+  labelCanvas.height = 512;
+  const lctx = labelCanvas.getContext('2d');
+  lctx.fillStyle = '#b8bec8';
+  lctx.fillRect(0, 0, 512, 512);
+
+  lctx.fillStyle = '#374151';
+  lctx.font = 'bold 32px sans-serif';
+  lctx.textAlign = 'center';
+  lctx.fillText('MED-SYNC PRO 3000', 256, 120);
+
+  lctx.font = '600 20px monospace';
+  lctx.fillText('DUAL-CHAMBER DDDR PACEMAKER', 256, 170);
+  lctx.fillText('TITANIUM HERMETIC • 3.0T MRI', 256, 210);
+
+  lctx.fillStyle = '#1f2937';
+  lctx.fillRect(156, 260, 200, 40);
+  lctx.fillStyle = '#ffffff';
+  lctx.font = 'bold 18px monospace';
+  lctx.fillText('SN: CR-8942-01A', 256, 286);
+
+  // Medical device barcode stripes
+  lctx.fillStyle = '#111827';
+  for (let b = 100; b < 412; b += 14) {
+    const bw = (b % 28 === 0) ? 8 : 4;
+    lctx.fillRect(b, 340, bw, 60);
+  }
+
+  const labelTex = new THREE.CanvasTexture(labelCanvas);
+  const labelPlaneGeom = new THREE.PlaneGeometry(1.0, 1.1);
+  const labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, opacity: 0.88 });
+  const labelMesh = new THREE.Mesh(labelPlaneGeom, labelMat);
+  labelMesh.position.set(0, -0.05, 0.135);
+  group.add(labelMesh);
+
+  // Transparent Medical Epoxy Connector Header
+  const headerShape = new THREE.Shape();
+  headerShape.moveTo(-w * 0.95, 0);
+  headerShape.lineTo(w * 0.95, 0);
+  headerShape.lineTo(w * 0.7, 0.35);
+  headerShape.lineTo(-w * 0.7, 0.35);
+  headerShape.closePath();
+
+  const headerGeom = new THREE.ExtrudeGeometry(headerShape, {
+    depth: 0.16,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    bevelSize: 0.02,
+    bevelThickness: 0.02,
+  });
+  headerGeom.center();
+
+  const headerMat = new THREE.MeshStandardMaterial({
+    color: 0xe2e8f0,
+    roughness: 0.15,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.75,
+  });
+  const headerMesh = new THREE.Mesh(headerGeom, headerMat);
+  headerMesh.position.set(0, 0.62, 0);
+  group.add(headerMesh);
+
+  // Dual IS-1 Lead Sockets with gold setscrew blocks inside header
+  [-0.2, 0.2].forEach((xOff) => {
+    const socketGeom = new THREE.CylinderGeometry(0.045, 0.045, 0.3, 16);
+    const socketMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 });
+    const socket = new THREE.Mesh(socketGeom, socketMat);
+    socket.position.set(xOff, 0.62, 0);
+    socket.rotation.z = Math.PI / 2;
+    group.add(socket);
+  });
+
+  // Active Cardiac Pacing Micro-LED Indicator
+  const ledGeom = new THREE.SphereGeometry(0.04, 16, 16);
+  const ledMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.5,
+  });
+  const ledMesh = new THREE.Mesh(ledGeom, ledMat);
+  ledMesh.position.set(0.35, 0.68, 0.08);
+  group.add(ledMesh);
+
+  // Synchronized Pacing Indicator Flash
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const t = (time * 1.15) % 1.0;
+    const paceFlash = Math.exp(-Math.pow(t - 0.04, 2) * 200);
+    ledMat.emissiveIntensity = 0.3 + paceFlash * 3.5;
+  });
+
+  return group;
+}
+
+/**
+ * MEDICAL DEVICE 2: Transvenous Dual-Chamber Pacing Leads & Electrodes
+ * Flexible multi-lumen insulated leads traversing through SVC to Right Atrium and RV apex.
+ */
+function buildRealisticPacingLeads(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  const leadMat = new THREE.MeshStandardMaterial({
+    color: 0x334155, // Silicone-polyurethane insulation
+    roughness: 0.4,
+    metalness: 0.2,
+  });
+  const electrodeMat = new THREE.MeshStandardMaterial({
+    color: 0xe2e8f0, // Platinized Pt/Ir electrode
+    metalness: 0.95,
+    roughness: 0.15,
+  });
+
+  // 1. Atrial Pacing Lead: from pacemaker header -> into SVC -> Right Atrial Appendage
+  const atrialPts = [
+    new THREE.Vector3(-1.6, 0.7, 0.3),
+    new THREE.Vector3(-0.9, 0.65, 0.2),
+    new THREE.Vector3(-0.2, 0.55, 0.1),
+    new THREE.Vector3(0.65, 0.65, -0.15),
+    new THREE.Vector3(0.55, 0.25, 0.0),
+    new THREE.Vector3(0.25, 0.15, 0.22), // Anchored in RA wall
+  ];
+  const atrialCurve = new THREE.CatmullRomCurve3(atrialPts);
+  const atrialGeom = new THREE.TubeGeometry(atrialCurve, 40, 0.026, 10, false);
+  const atrialMesh = new THREE.Mesh(atrialGeom, leadMat);
+  group.add(atrialMesh);
+
+  // Atrial active-fixation helix / electrode tines
+  const aElecGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.1, 16);
+  const aElec = new THREE.Mesh(aElecGeom, electrodeMat);
+  aElec.position.set(0.25, 0.15, 0.22);
+  aElec.rotation.x = Math.PI / 2;
+  group.add(aElec);
+
+  // 2. Ventricular Pacing Lead: through SVC -> RA -> Tricuspid Valve -> RV Apex Trabeculae
+  const ventPts = [
+    new THREE.Vector3(-1.6, 0.65, 0.3),
+    new THREE.Vector3(-0.95, 0.58, 0.18),
+    new THREE.Vector3(-0.25, 0.48, 0.08),
+    new THREE.Vector3(0.62, 0.55, -0.18),
+    new THREE.Vector3(0.5, 0.05, -0.05),
+    new THREE.Vector3(0.35, -0.45, 0.12),
+    new THREE.Vector3(0.15, -1.05, 0.25), // Anchored in RV apical septum
+  ];
+  const ventCurve = new THREE.CatmullRomCurve3(ventPts);
+  const ventGeom = new THREE.TubeGeometry(ventCurve, 50, 0.028, 10, false);
+  const ventMesh = new THREE.Mesh(ventGeom, leadMat);
+  group.add(ventMesh);
+
+  // Ventricular steroid-eluting porous tip electrode
+  const vElecGeom = new THREE.CylinderGeometry(0.045, 0.045, 0.12, 16);
+  const vElec = new THREE.Mesh(vElecGeom, electrodeMat);
+  vElec.position.set(0.15, -1.05, 0.25);
+  vElec.rotation.x = Math.PI / 3;
+  group.add(vElec);
+
+  // Silicone anchoring fixation tines
+  [-0.04, 0.04].forEach((offset) => {
+    const tineGeom = new THREE.ConeGeometry(0.02, 0.08, 8);
+    const tine = new THREE.Mesh(tineGeom, leadMat);
+    tine.position.set(0.15 + offset, -1.02, 0.25);
+    tine.rotation.z = offset * 12;
+    group.add(tine);
+  });
+
+  // Dynamic Bio-Electrical Pacing Wave Animation (Stimulus pulse traversing the leads)
+  const pulseGeom = new THREE.SphereGeometry(0.045, 12, 12);
+  const pulseMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 2.0,
+  });
+  const pulseNodeA = new THREE.Mesh(pulseGeom, pulseMat);
+  const pulseNodeV = new THREE.Mesh(pulseGeom, pulseMat);
+  group.add(pulseNodeA);
+  group.add(pulseNodeV);
+
+  COMPONENT_ANIMATORS.push((delta, time) => {
+    const t = (time * 1.15) % 1.0;
+    // Pacing impulse fires from t = 0.02 to 0.12
+    if (t >= 0.02 && t <= 0.16) {
+      const prog = (t - 0.02) / 0.14;
+      pulseNodeA.visible = true;
+      pulseNodeV.visible = true;
+      const ptA = atrialCurve.getPoint(Math.min(1.0, prog * 1.1));
+      const ptV = ventCurve.getPoint(prog);
+      pulseNodeA.position.copy(ptA);
+      pulseNodeV.position.copy(ptV);
+    } else {
+      pulseNodeA.visible = false;
+      pulseNodeV.visible = false;
+    }
+  });
+
+  return group;
+}
+
+/**
+ * MEDICAL DEVICE 3: Drug-Eluting Coronary Stent
+ * Micro-lattice expandable cobalt-chromium stent scaffold deployed inside the LAD coronary artery.
+ */
+function buildRealisticCoronaryStent(part, baseMaterial) {
+  const group = new THREE.Group();
+
+  const stentLen = 0.7;
+  const stentR = 0.18;
+
+  // Cobalt-Chromium metallic scaffold mesh
+  const stentGeom = new THREE.CylinderGeometry(stentR, stentR, stentLen, 32, 16, true);
+  const stentMat = new THREE.MeshStandardMaterial({
+    color: 0xe2e8f0, // CoCr Alloy
+    metalness: 0.96,
+    roughness: 0.16,
+    wireframe: true,
+  });
+  const stentMesh = new THREE.Mesh(stentGeom, stentMat);
+  stentMesh.castShadow = true;
+  group.add(stentMesh);
+
+  // Inner smooth expanded arterial lumen liner
+  const innerGeom = new THREE.CylinderGeometry(stentR * 0.96, stentR * 0.96, stentLen * 0.98, 24, 1, true);
+  const innerMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    transparent: true,
+    opacity: 0.35,
+    roughness: 0.3,
+  });
+  const innerMesh = new THREE.Mesh(innerGeom, innerMat);
+  group.add(innerMesh);
+
+  // Radio-Opaque Platinum Marker Bands (Proximal and Distal radiopaque markers)
+  [-stentLen * 0.46, stentLen * 0.46].forEach((yPos) => {
+    const bandGeom = new THREE.TorusGeometry(stentR, 0.018, 8, 24);
+    const bandMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.98, roughness: 0.1 });
+    const band = new THREE.Mesh(bandGeom, bandMat);
+    band.position.y = yPos;
+    band.rotation.x = Math.PI / 2;
+    group.add(band);
+  });
+
+  return group;
+}
+
+// -----------------------------------------------------------------------------
+// 19B. STANDALONE CARDIAC PACEMAKER SYSTEM (MEDICAL DEVICES CATALOG)
+// -----------------------------------------------------------------------------
+
+function buildRealisticPacemakerCase(part, baseMaterial) {
+  const group = new THREE.Group();
+  const shape = new THREE.Shape();
+  const w = 1.1, h = 1.25, r = 0.32;
+  shape.moveTo(-w + r, -h);
+  shape.lineTo(w - r, -h);
+  shape.quadraticCurveTo(w, -h, w, -h + r);
+  shape.lineTo(w, h - r);
+  shape.quadraticCurveTo(w, h, w - r, h);
+  shape.lineTo(-w + r, h);
+  shape.quadraticCurveTo(-w, h, -w, h - r);
+  shape.lineTo(-w, -h + r);
+  shape.quadraticCurveTo(-w, -h, -w + r, -h);
+
+  const geom = new THREE.ExtrudeGeometry(shape, {
+    depth: 0.38,
+    bevelEnabled: true,
+    bevelSegments: 4,
+    bevelSize: 0.08,
+    bevelThickness: 0.08,
+  });
+  geom.center();
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xd1d5db,
+    metalness: 0.95,
+    roughness: 0.22,
+    bumpMap: makeBrushedMetalBumpMap(),
+    bumpScale: 0.015,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.castShadow = true;
+  group.add(mesh);
+
+  return group;
+}
+
+function buildRealisticPacemakerHeader(part, baseMaterial) {
+  const group = new THREE.Group();
+  const geom = new THREE.BoxGeometry(2.1, 0.75, 0.45);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xe2e8f0,
+    transparent: true,
+    opacity: 0.68,
+    roughness: 0.12,
+    metalness: 0.05,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.castShadow = true;
+  group.add(mesh);
+
+  // Dual IS-1 connector sockets
+  [-0.45, 0.45].forEach((x) => {
+    const sockGeom = new THREE.CylinderGeometry(0.08, 0.08, 0.7, 16);
+    const sockMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 });
+    const sock = new THREE.Mesh(sockGeom, sockMat);
+    sock.position.set(x, 0, 0);
+    sock.rotation.z = Math.PI / 2;
+    group.add(sock);
+  });
+
+  return group;
+}
+
+function buildRealisticPacemakerBattery(part, baseMaterial) {
+  const group = new THREE.Group();
+  const geom = new THREE.BoxGeometry(1.7, 1.3, 0.32);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x475569,
+    metalness: 0.85,
+    roughness: 0.35,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.castShadow = true;
+  group.add(mesh);
+  return group;
+}
+
+function buildRealisticPacemakerCircuit(part, baseMaterial) {
+  const group = new THREE.Group();
+  const geom = new THREE.BoxGeometry(1.7, 0.75, 0.18);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x1e3a8a,
+    roughness: 0.5,
+    metalness: 0.25,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  group.add(mesh);
+
+  // IC chip die
+  const icGeom = new THREE.BoxGeometry(0.5, 0.08, 0.35);
+  const icMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
+  const ic = new THREE.Mesh(icGeom, icMat);
+  ic.position.set(0, 0.12, 0);
+  group.add(ic);
+
+  return group;
+}
+
+function buildRealisticPacemakerLeadStandalone(part, baseMaterial) {
+  const group = new THREE.Group();
+  const curvePts = [
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.5, 0.8, 0.3),
+    new THREE.Vector3(1.2, 1.8, 0.2),
+    new THREE.Vector3(1.6, 2.8, -0.1),
+  ];
+  const curve = new THREE.CatmullRomCurve3(curvePts);
+  const geom = new THREE.TubeGeometry(curve, 32, 0.08, 12, false);
+  const mat = new THREE.MeshStandardMaterial({
+    color: part.color || 0x334155,
+    roughness: 0.4,
+    metalness: 0.2,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.castShadow = true;
+  group.add(mesh);
+  return group;
+}
+
+function buildRealisticPacemakerTelemetry(part, baseMaterial) {
+  const group = new THREE.Group();
+  for (let r = 0.2; r <= 0.65; r += 0.12) {
+    const ringGeom = new THREE.TorusGeometry(r, 0.02, 8, 32);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.95, roughness: 0.15 });
+    const ring = new THREE.Mesh(ringGeom, ringMat);
+    group.add(ring);
+  }
+  return group;
+}
+
+function buildRealisticPacemakerWand(part, baseMaterial) {
+  const group = new THREE.Group();
+  const bodyGeom = new THREE.BoxGeometry(1.8, 1.1, 3.2);
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.4,
+    metalness: 0.2,
+  });
+  const body = new THREE.Mesh(bodyGeom, bodyMat);
+  body.castShadow = true;
+  group.add(body);
+
+  const headGeom = new THREE.CylinderGeometry(0.65, 0.65, 0.4, 24);
+  const headMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 });
+  const head = new THREE.Mesh(headGeom, headMat);
+  head.position.set(0, 0.6, 0.6);
+  group.add(head);
+
+  return group;
+}
+
+// Backwards-compatible aliases
+function buildRealisticHeartVentricle(part, baseMaterial) {
+  return buildRealisticLeftVentricle(part, baseMaterial);
+}
+function buildRealisticHeartAtrium(part, baseMaterial) {
+  return buildRealisticLeftAtrium(part, baseMaterial);
 }
 
 // -----------------------------------------------------------------------------

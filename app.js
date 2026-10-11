@@ -249,12 +249,30 @@ function getPartCategory(part, objectId = currentObjectId) {
     return 'Subatomic Lepton';
   }
 
-  // Science & Concepts: Anatomy
-  if (objectId === 'human-heart' || name.includes('ventricle') || name.includes('atrium') || name.includes('aorta')) {
-    if (pid.includes('ventricle')) return 'Ventricular Pumping Chamber';
-    if (pid.includes('atrium')) return 'Atrial Inflow Chamber';
-    if (pid === 'aorta') return 'Systemic Elastic Artery';
-    return 'Cardiovascular Conduit';
+  // Science & Concepts: Anatomy & Medical Devices
+  if (objectId === 'human-heart') {
+    if (pid === 'left-ventricle') return 'Systemic High-Pressure Ventricle';
+    if (pid === 'right-ventricle') return 'Pulmonary Low-Pressure Ventricle';
+    if (pid === 'left-atrium') return 'Oxygenated Pulmonary Inflow Chamber';
+    if (pid === 'right-atrium') return 'Systemic Venous Inflow & Pacemaker';
+    if (pid === 'aorta') return 'Systemic Elastic Artery & Arch';
+    if (pid === 'pulmonary-trunk') return 'Pulmonary Arterial Outflow Trunk';
+    if (pid === 'major-veins') return 'Vena Cava & Pulmonary Conduits';
+    if (pid === 'coronary-circulation') return 'Coronary Vasculature & Epicardial Fat';
+    if (pid === 'pacemaker') return 'Active Implantable Medical Device';
+    if (pid === 'pacing-leads') return 'Endocardial Pacing Electrodes';
+    if (pid === 'coronary-stent') return 'Interventional Cardiovascular Stent';
+    return 'Cardiovascular Anatomy';
+  }
+  if (objectId === 'cardiac-pacemaker') {
+    if (pid === 'titanium-case') return 'Hermetic Implantable Canister';
+    if (pid === 'header-block') return 'IS-1 Biocompatible Connector';
+    if (pid === 'lithium-battery') return 'High-Capacity Primary Cell';
+    if (pid === 'hybrid-circuit') return 'Microcontroller & Pacing Engine';
+    if (pid.includes('lead')) return 'Transvenous Bipolar Electrode Lead';
+    if (pid === 'telemetry-antenna') return 'Inductive RF Telemetry';
+    if (pid === 'programming-wand') return 'Clinical Programmer Wand';
+    return 'Cardiac Rhythm Management';
   }
 
   if (objectId === 'human-eye' || name.includes('cornea') || name.includes('retina') || name.includes('iris') || name.includes('lens')) {
@@ -345,9 +363,29 @@ function formatPartDimensions(geomDef, part, objectId = currentObjectId) {
     return 'Point Particle (< 10⁻¹⁸ m)';
   }
   if (objectId === 'human-heart') {
-    if (part?.id?.includes('ventricle')) return '~12 × 8.5 × 6 cm | Wall 10–12 mm';
-    if (part?.id === 'aorta') return 'Lumen Ø 25–30 mm | Length ~30 cm';
-    return 'Volume ~50–70 mL';
+    if (part?.id === 'left-ventricle') return '~12 × 8.5 × 6 cm | Wall 11 mm';
+    if (part?.id === 'right-ventricle') return '~11 × 7 × 4.5 cm | Wall 4 mm';
+    if (part?.id === 'left-atrium') return 'Volume ~55 mL | Wall 2–3 mm';
+    if (part?.id === 'right-atrium') return 'Volume ~65 mL | Wall 2–3 mm';
+    if (part?.id === 'aorta') return 'Lumen Ø 28 mm | Arch Length 12 cm';
+    if (part?.id === 'pulmonary-trunk') return 'Lumen Ø 26 mm | Trunk Length 5 cm';
+    if (part?.id === 'major-veins') return 'SVC Ø 20 mm | IVC Ø 24 mm';
+    if (part?.id === 'coronary-circulation') return 'LAD Ø 3.5 mm | RCA Ø 3.2 mm';
+    if (part?.id === 'pacemaker') return '45 × 50 × 6 mm | Weight 22 g';
+    if (part?.id === 'pacing-leads') return 'Ø 1.9 mm (5.8 Fr) | Length 58 cm';
+    if (part?.id === 'coronary-stent') return 'Expanded Ø 3.0 mm × 18 mm';
+    return 'Anatomical Scale';
+  }
+  if (objectId === 'cardiac-pacemaker') {
+    if (part?.id === 'titanium-case') return '45 × 50 × 6 mm | Laser Welded';
+    if (part?.id === 'header-block') return '42 × 14 × 8 mm (Dual IS-1 Ports)';
+    if (part?.id === 'lithium-battery') return '38 × 32 × 4.5 mm (1.2 Ah, 3.2V)';
+    if (part?.id === 'hybrid-circuit') return '35 × 25 × 1.8 mm (<8 µA Quiescent)';
+    if (part?.id === 'atrial-lead') return 'Ø 1.9 mm × 52 cm (Active Fixation)';
+    if (part?.id === 'ventricular-lead') return 'Ø 1.9 mm × 58 cm (Steroid Tip)';
+    if (part?.id === 'telemetry-antenna') return 'Ø 22 mm Spiral RF Loop';
+    if (part?.id === 'programming-wand') return '140 × 90 × 24 mm Wand';
+    return 'Medical Device Standard';
   }
   if (objectId === 'human-eye') {
     if (part?.id === 'cornea') return 'Ø 11.5 mm | Central Thickness 0.52 mm';
@@ -405,10 +443,28 @@ function getPartFinish(part, objectId = currentObjectId) {
     return 'Quantum Probability Wavepacket';
   }
 
-  // Anatomy
+  // Anatomy & Medical Devices
   if (objectId === 'human-heart') {
-    if (pid.includes('ventricle') || pid.includes('atrium')) return 'Cardiac Striated Myocardium';
-    return 'Vascular Endothelium & Smooth Muscle';
+    if (pid.includes('ventricle')) return 'Striated Myocardium & Moist Epicardium';
+    if (pid.includes('atrium')) return 'Endocardial Muscle & Pectinate Auricle';
+    if (pid === 'aorta') return 'High-Compliance Elastic Laminae & Endothelium';
+    if (pid === 'pulmonary-trunk') return 'Elastic Arterial Wall & Endothelium';
+    if (pid === 'major-veins') return 'Vascular Endothelium & Smooth Muscle';
+    if (pid === 'coronary-circulation') return 'Arterial Vasculature & Adipose Tissue';
+    if (pid === 'pacemaker') return 'Laser-Welded Grade-5 Titanium & Epoxy';
+    if (pid === 'pacing-leads') return 'Silicone-Polyurethane & Platinized Ir';
+    if (pid === 'coronary-stent') return 'Electropolished Cobalt-Chromium & Polymer';
+    return 'Cardiovascular Tissue';
+  }
+  if (objectId === 'cardiac-pacemaker') {
+    if (pid === 'titanium-case') return 'Laser-Welded Grade-5 Biocompatible Titanium';
+    if (pid === 'header-block') return 'Optically Clear Medical-Grade Epoxy / Silicone';
+    if (pid === 'lithium-battery') return 'Hermetic Stainless Steel Lithium-CFx Cell';
+    if (pid === 'hybrid-circuit') return 'Gold-Bonded Ceramic Multi-Layer Substrate';
+    if (pid.includes('lead')) return 'Silicone-Polyurethane Copolymer & Pt/Ir';
+    if (pid === 'telemetry-antenna') return 'Gold-Plated Copper Spiral Trace';
+    if (pid === 'programming-wand') return 'Molded Medical Polycarbonate / ABS';
+    return 'Medical-Grade Finish';
   }
   if (objectId === 'human-eye') {
     if (pid === 'cornea') return 'Avascular Collagenous Lamellae';
@@ -736,9 +792,15 @@ function loadObject(objId) {
       dir.normalize();
     }
 
+    if (part.rotation) {
+      partObj.rotation.set(...part.rotation);
+    }
+    partObj.position.copy(origPos);
+
     partObj.userData = {
       partData: part,
       originalPosition: origPos.clone(),
+      originalRotation: part.rotation ? new THREE.Euler(...part.rotation) : partObj.rotation.clone(),
       explodeDirection: dir,
       originalColor: part.color,
       originalEmissive: {
@@ -751,6 +813,8 @@ function loadObject(objId) {
     activeMeshes.push(partObj);
     bbox.expandByObject(partObj);
   });
+
+  updateExplosion(0);
 
   // Calculate assembled bounding box to anchor contact shadow perfectly
   const bottomY = bbox.min.y;

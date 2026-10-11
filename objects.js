@@ -2679,88 +2679,64 @@ const OBJECTS = {
     ]
   },
   "human-heart": {
-    "label": "Human Heart",
+    "label": "Human Heart & Medical Devices",
     "category": "Science & Concepts",
     "icon": "🫀",
-    "viewRadius": 9,
-    "explodeDistance": 2.2,
+    "viewRadius": 10,
+    "explodeDistance": 2.5,
     "parts": [
       {
         "id": "left-ventricle",
-        "name": "Left Ventricle",
-        "color": 10033947,
+        "name": "Left Ventricle & Cardiac Apex",
+        "color": 9706267,
         "geometry": {
           "type": "sphere",
           "args": [
-            1.1,
+            1.15,
+            32,
+            32
+          ]
+        },
+        "position": [
+          -0.35,
+          -0.65,
+          0.2
+        ],
+        "description": "Thick-walled muscular pumping chamber forming the cardiac apex, generating high systemic systolic pressure (~120 mmHg) to eject oxygenated blood through the aortic valve into systemic circulation.",
+        "partCategory": "Systemic High-Pressure Ventricle",
+        "finish": "Cardiac Striated Myocardium & Moist Epicardium",
+        "dimensions": "~12 × 8.5 × 6 cm | Wall 10–12 mm",
+        "simple": "The powerhouse pumping chamber of the heart that contracts with strong muscular force to pump oxygen-rich blood out to the entire body.",
+        "technical": "Thick-walled myocardial chamber generating systemic systolic arterial pressures (~120 mmHg). Receives oxygenated blood from the left atrium via the bicuspid (mitral) valve and ejects stroke volume (~70 mL) across the aortic semilunar valve into the ascending aorta."
+      },
+      {
+        "id": "right-ventricle",
+        "name": "Right Ventricle & Infundibulum",
+        "color": 11149860,
+        "geometry": {
+          "type": "sphere",
+          "args": [
+            1.0,
             28,
             28
           ]
         },
         "position": [
+          0.5,
           -0.45,
-          -0.6,
-          0.2
-        ],
-        "description": "The thickest muscular chamber of the heart that contracts with high pressure to pump oxygen-rich blood through the aortic valve into systemic circulation.",
-        "partCategory": "Ventricular Pumping Chamber",
-        "finish": "Cardiac Striated Myocardium",
-        "dimensions": "~12 × 8.5 × 6 cm | Wall 10–12 mm",
-        "simple": "The main pumping chamber of the heart that contracts with strong muscular force to pump oxygen-rich blood out to the entire body.",
-        "technical": "Thick-walled myocardial chamber generating systemic systolic arterial pressures (~120 mmHg). Receives oxygenated blood from the left atrium via the bicuspid (mitral) valve and ejects stroke volume (~70 mL) across the aortic semilunar valve."
-      },
-      {
-        "id": "right-ventricle",
-        "name": "Right Ventricle",
-        "color": 12131356,
-        "geometry": {
-          "type": "sphere",
-          "args": [
-            0.95,
-            24,
-            24
-          ]
-        },
-        "position": [
-          0.55,
-          -0.5,
           0.35
         ],
-        "description": "Pumps low-pressure deoxygenated blood through the pulmonary valve into the pulmonary trunk and lungs for oxygenation.",
-        "partCategory": "Pulmonary Pumping Chamber",
+        "description": "Crescentic anterior chamber receiving deoxygenated blood from the right atrium and pumping it through the pulmonary valve into the pulmonary trunk for oxygenation in the lungs.",
+        "partCategory": "Pulmonary Low-Pressure Ventricle",
         "finish": "Cardiac Striated Myocardium",
-        "dimensions": "Wall Thickness: 3–5 mm | Volume ~70 mL",
-        "simple": "The lower chamber on the right side of the heart that pumps oxygen-poor blood to the lungs to pick up fresh oxygen.",
-        "technical": "Low-pressure chamber generating pulmonary arterial pressures (~25/10 mmHg). Pumps deoxygenated blood through the pulmonary semilunar valve into the pulmonary trunk for alveolar gas exchange."
+        "dimensions": "~11 × 7 × 4.5 cm | Wall 3–5 mm",
+        "simple": "The lower chamber on the right side of the heart that pumps oxygen-depleted blood to the lungs to pick up fresh oxygen.",
+        "technical": "Low-pressure chamber generating pulmonary arterial pressures (~25/10 mmHg). Tapers superiorly into the infundibulum (conus arteriosus), pumping stroke volume across the pulmonary semilunar valve for alveolar gas exchange."
       },
       {
         "id": "left-atrium",
-        "name": "Left Atrium",
-        "color": 14251782,
-        "geometry": {
-          "type": "sphere",
-          "args": [
-            0.75,
-            24,
-            24
-          ]
-        },
-        "position": [
-          -0.6,
-          0.8,
-          -0.4
-        ],
-        "description": "Receives freshly oxygenated blood returning from the lungs via pulmonary veins and transfers it into the left ventricle through the mitral valve.",
-        "partCategory": "Atrial Inflow Chamber",
-        "finish": "Pectinate Endocardial Lining",
-        "dimensions": "Volume ~50–60 mL",
-        "simple": "The upper holding chamber on the left side that receives fresh, oxygenated blood returning from the lungs.",
-        "technical": "Smooth-walled posterior chamber receiving oxygenated pulmonary venous return from four pulmonary veins; empties into the left ventricle across the mitral valve during ventricular diastole."
-      },
-      {
-        "id": "right-atrium",
-        "name": "Right Atrium",
-        "color": 2450411,
+        "name": "Left Atrium & Auricle",
+        "color": 10427693,
         "geometry": {
           "type": "sphere",
           "args": [
@@ -2770,71 +2746,440 @@ const OBJECTS = {
           ]
         },
         "position": [
-          0.9,
-          0.7,
-          0.1
+          -0.55,
+          0.75,
+          -0.35
         ],
-        "description": "Receives deoxygenated systemic venous return from the superior and inferior vena cava and routes it through the tricuspid valve into the right ventricle.",
-        "partCategory": "Atrial Inflow & Pacemaker Node",
-        "finish": "Endocardial Muscle & SA Node",
-        "dimensions": "Volume ~50–60 mL",
-        "simple": "The upper chamber on the right side that receives deoxygenated blood returning from the body.",
-        "technical": "Chamber receiving deoxygenated systemic venous return from the superior and inferior venae cavae; houses the Sinoatrial (SA) node pacemaker regulating intrinsic myocardial electrical conduction."
+        "description": "Postero-superior inflow chamber receiving freshly oxygenated blood from the four pulmonary veins and channeling it through the mitral valve into the left ventricle.",
+        "partCategory": "Oxygenated Pulmonary Inflow Chamber",
+        "finish": "Endocardial Muscle & Pectinate Auricle",
+        "dimensions": "Volume ~50–60 mL | Wall 2–3 mm",
+        "simple": "The upper receiving chamber that collects oxygenated blood freshly returned from the lungs.",
+        "technical": "Smooth-walled posterior chamber receiving four pulmonary veins; features a crenulated left auricle (atrial appendage) and delivers active atrial kick contraction during ventricular diastole."
       },
       {
-        "id": "aorta",
-        "name": "Aorta",
-        "color": 15680580,
+        "id": "right-atrium",
+        "name": "Right Atrium & SA Node",
+        "color": 8330540,
         "geometry": {
-          "type": "cylinder",
+          "type": "sphere",
           "args": [
-            0.45,
-            0.45,
-            2.2,
+            0.85,
+            24,
             24
           ]
         },
         "position": [
-          -0.1,
-          1.9,
-          0
+          0.8,
+          0.65,
+          0.1
+        ],
+        "description": "Receives deoxygenated systemic venous return from the superior and inferior vena cava; houses the Sinoatrial (SA) node pacemaker regulating intrinsic cardiac rhythm.",
+        "partCategory": "Systemic Venous Inflow & Pacemaker",
+        "finish": "Pectinate Endocardium & SA Nodal Tissue",
+        "dimensions": "Volume ~55–65 mL | Wall 2–3 mm",
+        "simple": "The upper chamber on the right side that receives blood returning from the body and contains the heart's natural pacemaker node.",
+        "technical": "Chamber receiving systemic venous return via SVC and IVC; contains the crista terminalis, pectinate muscles, fossa ovalis, and the intrinsic Sinoatrial (SA) node generating electrical sinus impulses at 60–100 bpm."
+      },
+      {
+        "id": "aorta",
+        "name": "Ascending Aorta & Aortic Arch",
+        "color": 14431535,
+        "geometry": {
+          "type": "cylinder",
+          "args": [
+            0.42,
+            0.42,
+            2.4,
+            24
+          ]
+        },
+        "position": [
+          -0.15,
+          1.6,
+          0.05
         ],
         "rotation": [
-          0.2,
+          0.15,
           0,
-          -0.25
+          -0.2
         ],
-        "description": "The primary and largest systemic artery emerging from the left ventricle, arching over the pulmonary trunk to supply oxygenated blood to the body.",
-        "partCategory": "Systemic Elastic Artery",
-        "finish": "Endothelium & Elastic Laminae",
-        "dimensions": "Lumen Ø 25–30 mm | Length ~30 cm",
-        "simple": "The largest artery in the human body, carrying oxygen-rich blood directly from the heart out to all bodily organs.",
-        "technical": "High-compliance elastic systemic artery with thick tunica media rich in elastin laminations, dampening systolic pulsatile pressure spikes (Windkessel effect) and distributing oxygenated blood at ~120 mmHg."
+        "description": "The largest systemic elastic artery, featuring the sweeping aortic arch giving rise to the brachiocephalic, left common carotid, and left subclavian arteries to supply the body.",
+        "partCategory": "Systemic Elastic Artery & Arch",
+        "finish": "Endothelium & Tunica Media Elastic Laminae",
+        "dimensions": "Lumen Ø 25–30 mm | Arch Span ~12 cm",
+        "simple": "The massive main artery that curves up and over the heart, distributing fresh oxygenated blood to the brain, arms, and whole body.",
+        "technical": "High-compliance elastic artery with thick tunica media dampening pulsatile pressures (Windkessel effect). Features three primary arch branches: brachiocephalic trunk, left common carotid, and left subclavian artery."
+      },
+      {
+        "id": "pulmonary-trunk",
+        "name": "Pulmonary Trunk & Arteries",
+        "color": 2450411,
+        "geometry": {
+          "type": "cylinder",
+          "args": [
+            0.38,
+            0.38,
+            1.8,
+            24
+          ]
+        },
+        "position": [
+          0.1,
+          1.25,
+          0.25
+        ],
+        "description": "Arterial conduit emerging from the right ventricle anterior to the aorta, crossing beneath the aortic arch and bifurcating into left and right pulmonary arteries.",
+        "partCategory": "Pulmonary Arterial Outflow Trunk",
+        "finish": "Elastic Pulmonary Conduit Wall",
+        "dimensions": "Lumen Ø 24–28 mm | Trunk Length ~5 cm",
+        "simple": "The large blue artery emerging from the front of the heart that branches out to carry blood into both lungs.",
+        "technical": "Low-resistance outflow vessel originating at the pulmonary semilunar valve; bifurcates into the left and right pulmonary arteries beneath the ligamentum arteriosum."
       },
       {
         "id": "major-veins",
-        "name": "Major Veins (Vena Cava & Pulmonary)",
-        "color": 1920728,
+        "name": "Vena Cava & Pulmonary Veins",
+        "color": 1989039,
         "geometry": {
           "type": "cylinder",
           "args": [
             0.4,
             0.4,
-            2.6,
+            2.8,
             20
           ]
         },
         "position": [
-          1.1,
-          1.4,
-          -0.3
+          0.95,
+          1.2,
+          -0.2
         ],
-        "description": "Large vascular conduits including the Superior & Inferior Vena Cava returning systemic venous blood, and pulmonary veins channeling blood to the left atrium.",
-        "partCategory": "Venous Return Conduits",
+        "description": "Large venous conduits including Superior Vena Cava (SVC), Inferior Vena Cava (IVC), and four pulmonary veins channeling venous return into the atria.",
+        "partCategory": "Systemic & Pulmonary Venous Conduits",
         "finish": "Vascular Endothelium & Smooth Muscle",
-        "dimensions": "Lumen Ø 20–22 mm",
-        "simple": "The large blood vessels (venae cavae and pulmonary veins) that carry blood back into the heart chambers.",
-        "technical": "High-capacitance, low-pressure venous conduits (Superior and Inferior Vena Cava and Pulmonary Veins) returning systemic and pulmonary blood to atrial chambers at central venous pressures of 2–6 mmHg."
+        "dimensions": "SVC Ø 20 mm | IVC Ø 24 mm | PV Ø 14 mm",
+        "simple": "The major return pipes (vena cava and pulmonary veins) that bring blood back from the body and lungs into the heart.",
+        "technical": "High-capacitance low-pressure systemic venous conduits (SVC, IVC) and four oxygenated pulmonary veins terminating in the atrial chambers at central venous pressures of 2–6 mmHg."
+      },
+      {
+        "id": "coronary-circulation",
+        "name": "Coronary Arteries & Epicardial Fat",
+        "color": 15049539,
+        "geometry": {
+          "type": "cylinder",
+          "args": [
+            0.12,
+            0.12,
+            2.2,
+            16
+          ]
+        },
+        "position": [
+          0.05,
+          -0.3,
+          0.5
+        ],
+        "description": "The intrinsic arterial and venous vasculature supplying oxygen to the myocardium, including the Left Anterior Descending (LAD) artery, RCA, and protective adipose fat pads.",
+        "partCategory": "Coronary Vasculature & Epicardial Fat",
+        "finish": "Arterial Endothelium & Adipose Tissue",
+        "dimensions": "LAD Ø 3.5 mm | RCA Ø 3.2 mm | Sulcus Fat",
+        "simple": "The heart's own personal blood vessels and protective golden cushions that feed oxygen to the beating heart muscle.",
+        "technical": "Left Anterior Descending (LAD), Right Coronary Artery (RCA), and circumflex branches coursing through epicardial adipose tissue in the interventricular and atrioventricular sulci to nourish the myocardium."
+      },
+      {
+        "id": "pacemaker",
+        "name": "Cardiac Pacemaker (Pulse Generator)",
+        "color": 13751767,
+        "geometry": {
+          "type": "box",
+          "args": [
+            1.4,
+            1.6,
+            0.35
+          ]
+        },
+        "position": [
+          -2.3,
+          1.9,
+          0.75
+        ],
+        "description": "Active implantable medical device housed in a biocompatible titanium canister with a transparent header, delivering microsecond electrical pacing pulses to regulate heart rhythm.",
+        "partCategory": "Active Implantable Medical Device",
+        "finish": "Laser-Welded Grade-5 Titanium & Cast Medical Epoxy",
+        "dimensions": "45 × 50 × 6 mm | Weight 22 g | 1.2 Ah Cell",
+        "simple": "A small high-tech electronic device implanted under the skin that monitors heart rhythm and sends tiny electrical pulses whenever the heart beats too slowly.",
+        "technical": "Dual-chamber rate-responsive pulse generator (DDDR mode). Sealed inside laser-welded Grade-5 Titanium (Ti-6Al-4V) with transparent IS-1 connector header, lithium-iodine power cell, and bio-telemetry antenna."
+      },
+      {
+        "id": "pacing-leads",
+        "name": "Transvenous Dual-Chamber Pacing Leads",
+        "color": 3718648,
+        "geometry": {
+          "type": "cylinder",
+          "args": [
+            0.1,
+            0.1,
+            3.2,
+            16
+          ]
+        },
+        "position": [
+          -0.7,
+          1.2,
+          0.45
+        ],
+        "description": "Flexible multi-lumen leads routed from the pacemaker through the superior vena cava into the right atrium and right ventricle, anchoring with steroid-eluting electrodes.",
+        "partCategory": "Endocardial Electrodes & Conduits",
+        "finish": "Silicone-Polyurethane Copolymer & Platinum-Iridium",
+        "dimensions": "Ø 1.9 mm (5.8 Fr) | Atrial 52 cm | Ventricular 58 cm",
+        "simple": "Special insulated wires that travel through veins into the heart chambers to deliver electrical pacing signals directly to the heart muscle.",
+        "technical": "Co-radial MP35N conductor coil inside Optim silicone-polyurethane insulation. Features active fixation extendable helix and porous platinized platinum-iridium tip electrodes eluting dexamethasone acetate."
+      },
+      {
+        "id": "coronary-stent",
+        "name": "Drug-Eluting Coronary Stent",
+        "color": 14869218,
+        "geometry": {
+          "type": "cylinder",
+          "args": [
+            0.18,
+            0.18,
+            0.7,
+            20
+          ]
+        },
+        "position": [
+          0.05,
+          -0.15,
+          0.65
+        ],
+        "rotation": [
+          0.3,
+          0.1,
+          -0.4
+        ],
+        "description": "Balloon-expandable micro-lattice metallic scaffold deployed in the LAD coronary artery to restore blood flow and elute medication preventing arterial re-narrowing.",
+        "partCategory": "Interventional Cardiovascular Implant",
+        "finish": "Electropolished Cobalt-Chromium & Drug Polymer",
+        "dimensions": "Expanded Ø 3.0 mm × 18 mm | Strut 81 µm",
+        "simple": "A tiny expandable metal mesh tube placed inside a clogged heart artery to keep it wide open and prevent heart attacks.",
+        "technical": "Laser-cut balloon-expandable cobalt-chromium (CoCr) open-cell micro-lattice scaffold coated with biocompatible fluoropolymer eluting antiproliferative everolimus to prevent neointimal restenosis."
+      }
+    ]
+  },
+  "cardiac-pacemaker": {
+    "label": "Cardiac Pacemaker System",
+    "category": "Medical Devices",
+    "icon": "⚡",
+    "viewRadius": 10,
+    "explodeDistance": 2.6,
+    "parts": [
+      {
+        "id": "titanium-case",
+        "name": "Hermetic Titanium Canister",
+        "color": 13751767,
+        "geometry": {
+          "type": "box",
+          "args": [
+            2.4,
+            2.6,
+            0.55
+          ]
+        },
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "description": "Biocompatible Grade-5 titanium shell laser-welded with helium leak testing, protecting internal microelectronics from bodily fluids.",
+        "partCategory": "Hermetic Implantable Canister",
+        "finish": "Electropolished Ti-6Al-4V Medical Titanium",
+        "dimensions": "45 × 50 × 6 mm | Weight 20.8 g",
+        "simple": "The sleek, smooth titanium metal case that encloses and protects all electronic parts inside the patient's body.",
+        "technical": "Laser-welded Grade-5 Titanium (Ti-6Al-4V ELI) hermetic enclosure with hermetic ceramic-to-metal feedthroughs rated to <10⁻⁹ atm·cc/s He leak rate."
+      },
+      {
+        "id": "header-block",
+        "name": "IS-1 Connector Header Block",
+        "color": 11846618,
+        "geometry": {
+          "type": "box",
+          "args": [
+            2.2,
+            0.8,
+            0.52
+          ]
+        },
+        "position": [
+          0,
+          1.6,
+          0
+        ],
+        "transparent": true,
+        "opacity": 0.65,
+        "description": "Optically clear cast epoxy/silicone header accommodating dual IS-1 bipolar lead terminal pins with titanium setscrew blocks.",
+        "partCategory": "IS-1 Biocompatible Connector",
+        "finish": "Cast Medical-Grade Polyurethane Epoxy",
+        "dimensions": "42 × 14 × 8 mm (Dual IS-1 Ports)",
+        "simple": "The clear top connector where doctor plugs in the wires that connect the pacemaker to the heart.",
+        "technical": "Biocompatible thermoset polyurethane/epoxy header casting with two ISO 5841-3 (IS-1) standard bipolar receptacle cavities and silicone sealing grommets."
+      },
+      {
+        "id": "lithium-battery",
+        "name": "Lithium-Carbon Monofluoride Cell",
+        "color": 4868682,
+        "geometry": {
+          "type": "box",
+          "args": [
+            1.8,
+            1.4,
+            0.35
+          ]
+        },
+        "position": [
+          0,
+          -0.4,
+          0
+        ],
+        "description": "Solid-state high-energy-density primary chemical cell delivering 2.8–3.2V for 10–14 years of uninterrupted cardiac pacing.",
+        "partCategory": "High-Capacity Primary Cell",
+        "finish": "Stainless Steel Case & Glass-to-Metal Seal",
+        "dimensions": "38 × 32 × 4.5 mm (1.2 Ah Capacity)",
+        "simple": "An ultra-reliable medical battery engineered to last 10 to 14 years without ever needing to be recharged.",
+        "technical": "Lithium-Carbon Monofluoride (Li/CFx) or Lithium-Iodine solid electrolyte chemistry delivering 1.2–1.5 Ah with predictable internal resistance rise for elective replacement indication (ERI)."
+      },
+      {
+        "id": "hybrid-circuit",
+        "name": "Microcontroller & Pacing Engine",
+        "color": 2577457,
+        "geometry": {
+          "type": "box",
+          "args": [
+            1.8,
+            0.8,
+            0.2
+          ]
+        },
+        "position": [
+          0,
+          0.8,
+          0
+        ],
+        "description": "Ultra-low-power CMOS ASIC computing platform analyzing intracardiac electrograms and generating calibrated constant-voltage pacing pulses.",
+        "partCategory": "Microcontroller & Pacing Engine",
+        "finish": "Multi-Layer Ceramic Substrate & Gold Wire Bonds",
+        "dimensions": "34 × 22 × 1.8 mm | <8 µA Quiescent Current",
+        "simple": "The miniature microchip brain that watches every heartbeat and calculates the exact millisecond to send a pulse.",
+        "technical": "Custom low-power CMOS mixed-signal ASIC integrating dual-channel differential sense amplifiers, digitally programmable charge-pump output drivers, and 3-axis accelerometer for rate-responsive pacing."
+      },
+      {
+        "id": "atrial-lead",
+        "name": "Atrial Pacing Lead (IS-1)",
+        "color": 2450411,
+        "geometry": {
+          "type": "cylinder",
+          "args": [
+            0.12,
+            0.12,
+            3.2,
+            16
+          ]
+        },
+        "position": [
+          -1.2,
+          2.4,
+          0.6
+        ],
+        "rotation": [
+          0.2,
+          0.4,
+          -0.5
+        ],
+        "description": "Dual-bipolar transvenous lead terminating in extendable active-fixation helix anchoring into right atrial appendage pectinate muscle.",
+        "partCategory": "Transvenous Bipolar Electrode Lead",
+        "finish": "Optim Silicone-Polyurethane Copolymer",
+        "dimensions": "Ø 1.9 mm (5.8 Fr) | Length 52 cm",
+        "simple": "The flexible wire that senses and paces the upper chamber of the heart.",
+        "technical": "Bipolar 5.8 French lead with co-radial MP35N conductors, titanium-nitride coated porous tip electrode, and electrically active extendable/retractable helix."
+      },
+      {
+        "id": "ventricular-lead",
+        "name": "Ventricular Pacing Lead (IS-1)",
+        "color": 12131356,
+        "geometry": {
+          "type": "cylinder",
+          "args": [
+            0.12,
+            0.12,
+            3.8,
+            16
+          ]
+        },
+        "position": [
+          1.2,
+          2.6,
+          0.5
+        ],
+        "rotation": [
+          -0.2,
+          -0.4,
+          0.4
+        ],
+        "description": "Flexible lead routed across the tricuspid valve into the right ventricular apex, featuring steroid-eluting platinized electrode.",
+        "partCategory": "Transvenous Bipolar Electrode Lead",
+        "finish": "Optim Silicone-Polyurethane & Platinum-Iridium",
+        "dimensions": "Ø 1.9 mm (5.8 Fr) | Length 58 cm",
+        "simple": "The flexible wire that reaches down into the main pumping chamber of the heart.",
+        "technical": "Passive/active fixation ventricular lead incorporating dexamethasone sodium phosphate steroid elution plug to minimize chronic post-implant pacing capture threshold rise."
+      },
+      {
+        "id": "telemetry-antenna",
+        "name": "Inductive RF Telemetry Coil",
+        "color": 15647035,
+        "geometry": {
+          "type": "cylinder",
+          "args": [
+            0.7,
+            0.7,
+            0.1,
+            24
+          ]
+        },
+        "position": [
+          0,
+          0,
+          0.4
+        ],
+        "description": "Planar spiral radiofrequency coil enabling non-invasive wireless device interrogation and parameter adjustments through skin.",
+        "partCategory": "Inductive RF Telemetry",
+        "finish": "Gold-Plated Copper Spiral & Polyimide",
+        "dimensions": "Ø 24 mm | 402–405 MHz MICS Band",
+        "simple": "An internal antenna that allows the doctor's external computer to read diagnostic data and adjust settings without surgery.",
+        "technical": "Medical Implant Communication Service (MICS) band transceiver loop (402–405 MHz) with inductive 175 kHz magnetic programming capability."
+      },
+      {
+        "id": "programming-wand",
+        "name": "Clinician Programming Wand",
+        "color": 3030855,
+        "geometry": {
+          "type": "box",
+          "args": [
+            2.0,
+            1.2,
+            3.4
+          ]
+        },
+        "position": [
+          3.2,
+          0.5,
+          0
+        ],
+        "description": "External RF handheld transducer placed over the implant site during clinical appointments to interrogate telemetry and adjust pacing thresholds.",
+        "partCategory": "Clinical Programmer Transducer",
+        "finish": "Medical Grade ABS & Silicone Grips",
+        "dimensions": "150 × 90 × 28 mm Handheld",
+        "simple": "The handheld wand the cardiologist rests over the patient's chest to communicate with the pacemaker.",
+        "technical": "Clinician programming interface wand with magnetic positioning reed sensor, bi-directional telemetry radio, and USB interface communicating with programming programmer console."
       }
     ]
   },
